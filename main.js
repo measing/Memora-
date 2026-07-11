@@ -1,5 +1,5 @@
-import { initMemoraPlus } from './memora-plus.js?v=2';
-import { initAccountBar, initLoginPage, requireSessionForApp } from './account.js?v=6';
+import { initMemoraPlus } from './memora-plus.js?v=4';
+import { initAccountBar, initLoginPage, requireSessionForApp } from './account.js?v=8';
 
 function initViewportSupport(){
   const setAppHeight = () => {

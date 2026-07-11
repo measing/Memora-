@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memora-plus-web-v9';
+const CACHE_NAME = 'memora-plus-web-v11';
 
 const LOCAL_ASSETS = [
   './',
@@ -8,6 +8,8 @@ const LOCAL_ASSETS = [
   './main.js',
   './memora-plus.js',
   './account.js',
+  './firebase-config.js',
+  './firebase-service.js',
   './utils.js',
   './manifest.webmanifest',
   './assets/logo-memora-plus.png'

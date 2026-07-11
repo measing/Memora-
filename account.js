@@ -1,3 +1,12 @@
+import {
+  createFirebaseAccount,
+  loginFirebase,
+  continueWithGoogleFirebase,
+  getFirebaseSession,
+  hasFirebaseConfig,
+  signOutFirebase
+} from './firebase-service.js?v=2';
+
 const USERS_KEY = 'memoraPlusUsers';
 const SESSION_KEY = 'memoraPlusSession';
 
@@ -41,6 +50,11 @@ function setSession(user){
   return session;
 }
 
+function storeSession(session){
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  return session;
+}
+
 export function getCurrentSession(){
   try{
     const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
@@ -50,11 +64,12 @@ export function getCurrentSession(){
   }
 }
 
-export function signOut(){
+export async function signOut(){
+  await signOutFirebase().catch(() => {});
   localStorage.removeItem(SESSION_KEY);
 }
 
-async function createAccount({ email, password, name, provider = 'email' }){
+async function createLocalAccount({ email, password, name, provider = 'email' }){
   const cleanEmail = normalizeEmail(email);
   const cleanName = String(name || '').trim();
   if(!cleanEmail || !cleanEmail.includes('@')) throw new Error('Ingresa un correo válido.');
@@ -76,7 +91,7 @@ async function createAccount({ email, password, name, provider = 'email' }){
   return setSession(user);
 }
 
-async function login({ email, password }){
+async function loginLocal({ email, password }){
   const cleanEmail = normalizeEmail(email);
   const user = readUsers().find(item => item.email === cleanEmail);
   if(!user) throw new Error('No existe una cuenta con ese correo.');
@@ -87,7 +102,7 @@ async function login({ email, password }){
   return setSession(user);
 }
 
-async function continueWithGoogle(emailValue){
+async function continueWithGoogleLocal(emailValue){
   const email = normalizeEmail(emailValue);
   if(!email) throw new Error('Ingresa un correo para continuar con Google.');
   const users = readUsers();
@@ -107,11 +122,40 @@ async function continueWithGoogle(emailValue){
   return setSession(user);
 }
 
+async function createAccount(data){
+  if(hasFirebaseConfig()){
+    return storeSession(await createFirebaseAccount(data));
+  }
+  return createLocalAccount(data);
+}
+
+async function login(data){
+  if(hasFirebaseConfig()){
+    return storeSession(await loginFirebase(data));
+  }
+  return loginLocal(data);
+}
+
+async function continueWithGoogle(emailValue){
+  if(hasFirebaseConfig()){
+    return storeSession(await continueWithGoogleFirebase());
+  }
+  return continueWithGoogleLocal(emailValue);
+}
+
 function setStatus(message, type='info'){
   const status = document.getElementById('auth-status');
   if(!status) return;
   status.textContent = message;
   status.className = `auth-status ${type}`;
+}
+
+function renderFirebaseHint(){
+  const note = document.querySelector('.auth-google-note');
+  if(!note) return;
+  note.textContent = hasFirebaseConfig()
+    ? 'Acceso conectado a Firebase. Tus sesiones se guardarán en la base de datos del proyecto.'
+    : 'Aún falta pegar la configuración de Firebase. Mientras tanto, este acceso queda guardado localmente en este navegador.';
 }
 
 function setMode(mode){
@@ -162,10 +206,23 @@ export function initLoginPage(){
   const params = new URLSearchParams(location.search);
   setMode(params.get('mode') === 'register' ? 'register' : 'login');
   renderExistingSession();
+  renderFirebaseHint();
+  getFirebaseSession().then(session => {
+    if(session){
+      storeSession(session);
+      renderExistingSession();
+    }
+  }).catch(() => {});
 
   document.getElementById('auth-login-tab')?.addEventListener('click', () => setMode('login'));
   document.getElementById('auth-register-tab')?.addEventListener('click', () => setMode('register'));
   document.getElementById('auth-google')?.addEventListener('click', () => {
+    if(hasFirebaseConfig()){
+      continueWithGoogle()
+        .then(() => location.href = 'index.html')
+        .catch(error => setStatus(error.message, 'danger'));
+      return;
+    }
     const panel = document.getElementById('auth-google-panel');
     if(panel) panel.hidden = false;
     document.getElementById('auth-google-email')?.focus();
@@ -180,9 +237,10 @@ export function initLoginPage(){
     }
   });
   document.getElementById('auth-logout')?.addEventListener('click', () => {
-    signOut();
-    renderExistingSession();
-    setMode('login');
+    signOut().then(() => {
+      renderExistingSession();
+      setMode('login');
+    });
   });
   document.getElementById('auth-form')?.addEventListener('submit', async event => {
     event.preventDefault();
@@ -226,7 +284,8 @@ export function initAccountBar(){
     <a class="account-link" href="login.html?mode=register">Crear cuenta</a>
   `;
   document.getElementById('account-logout')?.addEventListener('click', () => {
-    signOut();
-    location.href = 'login.html';
+    signOut().finally(() => {
+      location.href = 'login.html';
+    });
   });
 }
