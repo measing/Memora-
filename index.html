@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#eef4ed" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Memora+" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Memora+</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="assets/logo-memora-plus.png" />
+  <link rel="stylesheet" href="style.css?v=7" />
+</head>
+<body>
+  <div class="top-account" id="account-bar" aria-label="Cuenta"></div>
+  <main class="memora-page">
+    <section class="memora-plus-view" id="memora-view" aria-label="Memora+">
+      <div class="memora-plus-app" id="memora-plus-app">
+        <header class="memora-plus-header">
+          <div>
+            <img class="memora-brand-logo" src="assets/logo-memora-plus.png" alt="Memora+" />
+            <p>Ejercicios de memoria, asociación, reconocimiento visual y secuencias con ritmo regulable, cartas grandes y seguimiento de evolución.</p>
+          </div>
+          <div class="memora-plus-summary" aria-label="Resumen de progreso">
+            <span>Sesiones</span>
+            <strong id="memora-total-sessions">0</strong>
+            <span>Precisión</span>
+            <strong id="memora-total-accuracy">0%</strong>
+          </div>
+        </header>
+
+        <section class="memora-plus-layout">
+          <aside class="memora-level-panel" aria-label="Ejercicios cognitivos">
+            <div class="memora-level-heading">
+              <h2>Ejercicios</h2>
+              <button class="memora-quiet-button" id="memora-reset-progress" type="button">Reiniciar datos</button>
+            </div>
+            <div id="memora-level-list" class="memora-level-list"></div>
+          </aside>
+
+          <section class="memora-activity-panel" aria-live="polite">
+            <div class="memora-activity-top">
+              <div>
+                <span id="memora-level-tag">Nivel 1</span>
+                <h2 id="memora-level-title">Memoria visual simple</h2>
+              </div>
+              <div class="memora-access-controls" aria-label="Ajustes de accesibilidad">
+                <label>
+                  Velocidad
+                  <select id="memora-speed">
+                    <option value="slow">Pausada</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="fast">Rápida</option>
+                  </select>
+                </label>
+                <label class="memora-toggle">
+                  <input id="memora-large-mode" type="checkbox" checked />
+                  <span>Cartas grandes</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="memora-session-strip">
+              <div><span>Aciertos</span><strong id="memora-hits">0</strong></div>
+              <div><span>Errores</span><strong id="memora-misses">0</strong></div>
+              <div><span>Progreso</span><strong id="memora-progress">0/0</strong></div>
+            </div>
+
+            <p class="memora-prompt" id="memora-prompt"></p>
+            <div id="memora-board" class="memora-board"></div>
+            <div id="memora-sequence-controls" class="memora-sequence-controls" hidden></div>
+
+            <div class="memora-action-row">
+              <button class="memora-primary-button" id="memora-start" type="button">Iniciar ejercicio</button>
+              <button class="memora-secondary-button" id="memora-repeat" type="button">Repetir muestra</button>
+            </div>
+          </section>
+
+          <aside class="memora-report-panel" aria-label="Panel profesional">
+            <h2>Panel profesional</h2>
+            <div class="memora-report-grid">
+              <span>Último ejercicio</span><strong id="memora-last-level">Sin registro</strong>
+              <span>Mejor racha</span><strong id="memora-best-streak">0</strong>
+              <span>Sesión actual</span><strong id="memora-session-score">0%</strong>
+            </div>
+            <div class="memora-note">
+              <strong>Enfoque de bienestar cognitivo.</strong>
+              <p>La experiencia está pensada para uso pausado, accesible y medible, con foco en reconocimiento, memoria y acompañamiento profesional.</p>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="main.js?v=6"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "Memora+",
+  "short_name": "Memora+",
+  "description": "Herramienta de estimulación cognitiva con ejercicios de memoria, asociación y secuencias.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef4ed",
+  "theme_color": "#eef4ed",
+  "categories": ["education", "health", "productivity"],
+  "icons": [
+    {
+      "src": "assets/logo-memora-plus.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
