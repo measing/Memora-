@@ -50,13 +50,13 @@ function mapFirebaseError(error){
   const messages = {
     'auth/email-already-in-use':'Ese correo ya tiene una cuenta.',
     'auth/invalid-email':'Ingresa un correo válido.',
-    'auth/invalid-credential':'Correo o contraseña incorrectos.',
+    'auth/invalid-credential':'Correo o contraseña incorrectos. Si es tu primera vez, usa Crear cuenta o Continuar con Google.',
     'auth/wrong-password':'Contraseña incorrecta.',
-    'auth/user-not-found':'No existe una cuenta con ese correo.',
+    'auth/user-not-found':'No existe una cuenta con ese correo. Primero crea la cuenta o entra con Google.',
     'auth/popup-closed-by-user':'Se cerró la ventana de Google antes de terminar.',
     'auth/popup-blocked':'El navegador bloqueó la ventana de Google.',
     'auth/operation-not-allowed':'Activa este proveedor en Firebase Authentication.',
-    'auth/unauthorized-domain':'Autoriza este dominio en Firebase Authentication.',
+    'auth/unauthorized-domain':'Autoriza este dominio en Firebase Authentication. Agrega este sitio en Authorized domains.',
     'auth/network-request-failed':'No se pudo conectar con Firebase. Revisa internet o la configuración.',
     'permission-denied':'Revisa las reglas de Firestore para permitir usuarios autenticados.',
     'failed-precondition':'Firestore necesita un índice o configuración adicional para esta operación.'
@@ -146,7 +146,10 @@ export async function createFirebaseAccount({ email, password, name }){
     const { authModule } = await loadFirebaseModules();
     const credential = await authModule.createUserWithEmailAndPassword(auth, email, password);
     await authModule.updateProfile(credential.user, { displayName:name });
-    const profile = await saveProfile(credential.user, { name, provider:'email' });
+    const profile = await saveProfile(credential.user, { name, provider:'email' }).catch(() => ({
+      name,
+      provider:'email'
+    }));
     return sessionFromUser(credential.user, profile);
   }catch(error){
     throw mapFirebaseError(error);
@@ -172,7 +175,7 @@ export async function continueWithGoogleFirebase(){
     const provider = new authModule.GoogleAuthProvider();
     provider.setCustomParameters({ prompt:'select_account' });
     const result = await authModule.signInWithPopup(auth, provider);
-    const profile = await saveProfile(result.user, { provider:'google' });
+    const profile = await saveProfile(result.user, { provider:'google' }).catch(() => ({ provider:'google' }));
     return sessionFromUser(result.user, profile);
   }catch(error){
     throw mapFirebaseError(error);

@@ -150,6 +150,33 @@ function setStatus(message, type='info'){
   status.className = `auth-status ${type}`;
 }
 
+function setAuthBusy(isBusy, activeButton, busyText){
+  const form = document.getElementById('auth-form');
+  const controls = document.querySelectorAll('#auth-form button, #auth-form input');
+  form?.setAttribute('aria-busy', String(isBusy));
+  controls.forEach(control => {
+    control.disabled = isBusy;
+  });
+  if(!activeButton) return;
+  if(!activeButton.dataset.idleHtml) activeButton.dataset.idleHtml = activeButton.innerHTML;
+  activeButton.textContent = isBusy ? busyText : activeButton.textContent;
+  if(!isBusy){
+    activeButton.innerHTML = activeButton.dataset.idleHtml;
+    delete activeButton.dataset.idleHtml;
+  }
+}
+
+function authStatusMessage(error, mode){
+  const message = error?.message || 'No se pudo completar la acción.';
+  if(message.includes('Authorized domains')){
+    return `${message} Para esta página publicada agrega ${location.hostname} en Firebase Authentication.`;
+  }
+  if(mode === 'login' && (message.includes('incorrectos') || message.includes('No existe'))){
+    return 'No pudimos ingresar con esos datos. Si aún no creaste cuenta en Memora+, toca Crear cuenta; si quieres usar tu Gmail, toca Continuar con Google.';
+  }
+  return message;
+}
+
 function renderFirebaseHint(){
   const note = document.querySelector('.auth-google-note');
   if(!note) return;
@@ -218,9 +245,14 @@ export function initLoginPage(){
   document.getElementById('auth-register-tab')?.addEventListener('click', () => setMode('register'));
   document.getElementById('auth-google')?.addEventListener('click', () => {
     if(hasFirebaseConfig()){
+      const googleButton = document.getElementById('auth-google');
+      setAuthBusy(true, googleButton, 'Conectando con Google...');
       continueWithGoogle()
         .then(() => location.href = 'index.html')
-        .catch(error => setStatus(error.message, 'danger'));
+        .catch(error => {
+          setStatus(error.message, 'danger');
+          setAuthBusy(false, googleButton);
+        });
       return;
     }
     const panel = document.getElementById('auth-google-panel');
@@ -229,11 +261,14 @@ export function initLoginPage(){
     setStatus('');
   });
   document.getElementById('auth-google-submit')?.addEventListener('click', async () => {
+    const googleSubmit = document.getElementById('auth-google-submit');
     try{
+      setAuthBusy(true, googleSubmit, 'Entrando...');
       await continueWithGoogle(document.getElementById('auth-google-email')?.value);
       location.href = 'index.html';
     }catch(error){
       setStatus(error.message, 'danger');
+      setAuthBusy(false, googleSubmit);
     }
   });
   document.getElementById('auth-logout')?.addEventListener('click', () => {
@@ -248,12 +283,15 @@ export function initLoginPage(){
     const email = document.getElementById('auth-email')?.value;
     const password = document.getElementById('auth-password')?.value;
     const name = document.getElementById('auth-name')?.value;
+    const submit = document.getElementById('auth-submit');
     try{
+      setAuthBusy(true, submit, mode === 'register' ? 'Creando cuenta...' : 'Ingresando...');
       if(mode === 'register') await createAccount({ email, password, name });
       else await login({ email, password });
       location.href = 'index.html';
     }catch(error){
-      setStatus(error.message, 'danger');
+      setStatus(authStatusMessage(error, mode), 'danger');
+      setAuthBusy(false, submit);
     }
   });
 }
