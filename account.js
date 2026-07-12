@@ -2,10 +2,9 @@ import {
   createFirebaseAccount,
   loginFirebase,
   continueWithGoogleFirebase,
-  getFirebaseSession,
   hasFirebaseConfig,
   signOutFirebase
-} from './firebase-service.js?v=2';
+} from './firebase-service.js?v=4';
 
 const USERS_KEY = 'memoraPlusUsers';
 const SESSION_KEY = 'memoraPlusSession';
@@ -234,12 +233,6 @@ export function initLoginPage(){
   setMode(params.get('mode') === 'register' ? 'register' : 'login');
   renderExistingSession();
   renderFirebaseHint();
-  getFirebaseSession().then(session => {
-    if(session){
-      storeSession(session);
-      renderExistingSession();
-    }
-  }).catch(() => {});
 
   document.getElementById('auth-login-tab')?.addEventListener('click', () => setMode('login'));
   document.getElementById('auth-register-tab')?.addEventListener('click', () => setMode('register'));

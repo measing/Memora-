@@ -1,6 +1,6 @@
 import { escapeHTML } from './utils.js?v=71';
-import { getCurrentSession } from './account.js?v=10';
-import { saveFirebaseProgress } from './firebase-service.js?v=2';
+import { getCurrentSession } from './account.js?v=12';
+import { saveFirebaseProgress } from './firebase-service.js?v=4';
 
 const STORAGE_KEY = 'memoraplusProgress';
 const SPEEDS = {
