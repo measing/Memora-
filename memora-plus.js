@@ -15,6 +15,7 @@ const LEVELS = [
     tag:'Nivel 1',
     title:'Memoria visual simple',
     prompt:'Encuentra pares iguales.',
+    explanation:'Encuentra las parejas iguales. Da vuelta dos cartas por turno y recuerda sus posiciones para completar todos los pares.',
     type:'pairs',
     pairs:[
       { id:'apple', faces:['🍎 Manzana', '🍎 Manzana'] },
@@ -30,6 +31,7 @@ const LEVELS = [
     tag:'Nivel 2',
     title:'Asociación semántica',
     prompt:'Une objetos que se relacionan.',
+    explanation:'Busca dos cartas que tengan relación entre sí, como objeto y uso, lugar o complemento. No son iguales: están asociadas por significado.',
     type:'pairs',
     pairs:[
       { id:'bread', faces:['🥖 Pan', '🧈 Mantequilla'] },
@@ -44,15 +46,17 @@ const LEVELS = [
     id:'temporal',
     tag:'Nivel 3',
     title:'Memoria temporal',
-    prompt:'Observa la muestra durante 10 segundos. Luego marca donde estaba cada elemento.',
+    prompt:'Observa las 9 cartas durante 10 segundos. Luego responde dónde estaba la carta que se pide.',
+    explanation:'Observa la ubicación de 9 cartas. Después se ocultarán y tendrás que marcar dónde estaba la carta que se muestra en la pregunta.',
     type:'temporal',
-    items:['🍎 Manzana', '🔑 Llave', '📻 Radio', '🧉 Mate', '🚂 Tren', '🧰 Caja']
+    items:['🍎 Manzana', '🔑 Llave', '📻 Radio', '🧉 Mate', '🚂 Tren', '🧰 Caja', '☂️ Paraguas', '🍞 Pan', '🌼 Flor']
   },
   {
     id:'sequence',
     tag:'Nivel 4',
     title:'Secuencias',
     prompt:'Mira el orden y reprodúcelo.',
+    explanation:'Mira una secuencia de colores, memoriza el orden y luego presiona los colores en la misma secuencia.',
     type:'sequence',
     sequence:['red', 'green', 'blue', 'yellow', 'green'],
     swatches:{
@@ -67,6 +71,7 @@ const LEVELS = [
     tag:'Nivel 5',
     title:'Memoria cotidiana chilena',
     prompt:'Asocia elementos familiares de la vida diaria.',
+    explanation:'Une cartas relacionadas con objetos y situaciones cotidianas. Trabaja reconocimiento, memoria y asociación con elementos familiares.',
     type:'pairs',
     pairs:[
       { id:'marraqueta', faces:['🥖 Marraqueta', '🏪 Panadería'] },
@@ -82,6 +87,7 @@ const LEVELS = [
 ];
 
 const state = {
+  appMode:'welcome',
   levelIndex:0,
   cards:[],
   flipped:[],
@@ -95,6 +101,7 @@ const state = {
   sequenceInput:[],
   sequenceTimer:null,
   streak:0,
+  guidedResults:[],
   progress:loadProgress()
 };
 
@@ -153,11 +160,7 @@ function updateSummary(){
 
 function updateStats(){
   const current = level();
-  const total = current.type === 'sequence'
-    ? current.sequence.length
-    : current.type === 'temporal'
-      ? current.items.length
-      : current.pairs.length;
+  const total = exerciseTotal(current);
   setText('memora-hits', state.hits);
   setText('memora-misses', state.misses);
   setText('memora-progress', `${state.matched}/${total}`);
@@ -167,6 +170,121 @@ function updateStats(){
 function setText(id, value){
   const el = document.getElementById(id);
   if(el) el.textContent = String(value);
+}
+
+function setTemporalQuestion(value = '', visible = false){
+  const el = document.getElementById('memora-temporal-question');
+  if(!el) return;
+  el.hidden = !visible;
+  el.innerHTML = value;
+}
+
+function exerciseTotal(current){
+  if(current.type === 'sequence') return current.sequence.length;
+  if(current.type === 'temporal') return current.items.length;
+  return current.pairs.length;
+}
+
+function setAppChromeVisible(visible){
+  const header = document.getElementById('memora-app-header');
+  const layout = document.getElementById('memora-app-layout');
+  const guide = document.getElementById('memora-guide');
+  if(header) header.hidden = true;
+  if(layout) layout.hidden = !visible;
+  if(guide) guide.hidden = visible;
+}
+
+function renderGuide(){
+  const guide = document.getElementById('memora-guide');
+  if(!guide) return;
+
+  if(state.appMode === 'welcome'){
+    guide.className = 'memora-guide memora-guide-welcome';
+    guide.innerHTML = `
+      <img class="memora-guide-logo" src="assets/logo-memora-plus.png" alt="Memora+" />
+      <div class="memora-guide-copy">
+        <span>Programa de ejercicios</span>
+        <h1>Comienza tu recorrido Memora+</h1>
+        <p>Realiza 5 niveles de memoria, asociación, memoria temporal, secuencias y vida cotidiana. Al terminar recibirás un resumen de tu sesión.</p>
+      </div>
+      <button class="memora-guide-primary" id="memora-guide-start" type="button">Empezar ejercicios</button>
+    `;
+    document.getElementById('memora-guide-start')?.addEventListener('click', () => {
+      state.guidedResults = [];
+      state.levelIndex = 0;
+      resetSession();
+      state.appMode = 'intro';
+      render();
+    });
+    return;
+  }
+
+  if(state.appMode === 'summary'){
+    const totals = state.guidedResults.reduce((acc, item) => ({
+      hits:acc.hits + item.hits,
+      misses:acc.misses + item.misses
+    }), { hits:0, misses:0 });
+    const attempts = totals.hits + totals.misses;
+    const accuracy = attempts ? Math.round((totals.hits / attempts) * 100) : 0;
+    guide.className = 'memora-guide memora-guide-summary';
+    guide.innerHTML = `
+      <div class="memora-guide-copy">
+        <span>Resumen final</span>
+        <h1>Recorrido completado</h1>
+        <p>Terminaste los 5 ejercicios. Estos son los resultados de esta sesión.</p>
+      </div>
+      <div class="memora-final-stats">
+        <div><span>Aciertos</span><strong>${totals.hits}</strong></div>
+        <div><span>Errores</span><strong>${totals.misses}</strong></div>
+        <div><span>Precisión</span><strong>${accuracy}%</strong></div>
+      </div>
+      <div class="memora-result-list">
+        ${state.guidedResults.map(item => `
+          <article>
+            <span>${escapeHTML(item.tag)}</span>
+            <strong>${escapeHTML(item.title)}</strong>
+            <p>${item.hits} aciertos · ${item.misses} errores · ${item.accuracy}% precisión</p>
+          </article>
+        `).join('')}
+      </div>
+      <button class="memora-guide-primary" id="memora-guide-restart" type="button">Hacer los ejercicios otra vez</button>
+    `;
+    document.getElementById('memora-guide-restart')?.addEventListener('click', () => {
+      state.guidedResults = [];
+      state.levelIndex = 0;
+      resetSession();
+      state.appMode = 'intro';
+      render();
+    });
+    return;
+  }
+
+  const current = level();
+  guide.className = 'memora-guide memora-guide-level';
+  guide.innerHTML = `
+    <div class="memora-guide-copy">
+      <span>${escapeHTML(current.tag)}</span>
+      <h1>${escapeHTML(current.title)}</h1>
+      <p>${escapeHTML(current.explanation)}</p>
+    </div>
+    <div class="memora-level-preview">
+      <span>Objetivo</span>
+      <strong>${exerciseTotal(current)} respuestas</strong>
+    </div>
+    <button class="memora-guide-primary" id="memora-guide-begin" type="button">Comenzar ejercicio</button>
+  `;
+  document.getElementById('memora-guide-begin')?.addEventListener('click', startExercise);
+}
+
+function currentExerciseResult(current){
+  const attempts = state.hits + state.misses;
+  return {
+    tag:current.tag,
+    title:current.title,
+    hits:state.hits,
+    misses:state.misses,
+    accuracy:attempts ? Math.round((state.hits / attempts) * 100) : 0
+  };
 }
 
 function renderLevelList(){
@@ -211,13 +329,36 @@ function buildPairCards(current){
   }))));
 }
 
+function promptForState(current){
+  if(state.phase === 'complete') return 'Ejercicio completado. Los datos quedaron en el panel profesional.';
+  if(current.type === 'temporal'){
+    if(state.phase === 'preview') return 'Observa bien la ubicación de las 9 cartas.';
+    if(state.phase === 'play' && state.temporalTarget) return 'Haz clic en el lugar donde estaba la carta indicada.';
+  }
+  if(current.type === 'sequence'){
+    if(state.phase === 'preview') return 'Memoriza el orden de los colores.';
+    if(state.phase === 'input') return 'Reproduce la secuencia.';
+  }
+  return current.prompt;
+}
+
 function render(){
   const current = level();
+  if(state.appMode !== 'exercise'){
+    setAppChromeVisible(false);
+    renderGuide();
+    updateSummary();
+    return;
+  }
+
+  setAppChromeVisible(true);
   document.getElementById('memora-plus-app')?.classList.toggle('large-cards', document.getElementById('memora-large-mode')?.checked !== false);
   setText('memora-level-tag', current.tag);
   setText('memora-level-title', current.title);
-  setText('memora-prompt', current.prompt);
-  renderLevelList();
+  setText('memora-prompt', promptForState(current));
+  if(current.type !== 'temporal' || state.phase !== 'play' || !state.temporalTarget){
+    setTemporalQuestion();
+  }
   renderBoard();
   updateStats();
 }
@@ -283,6 +424,7 @@ function renderSequence(board, controls, current){
 function startExercise(){
   resetSession();
   const current = level();
+  state.appMode = 'exercise';
   state.phase = current.type === 'pairs' ? 'play' : 'preview';
   state.cards = current.type === 'temporal'
     ? shuffle(current.items).map((face, index) => ({ id:`temporal-${index}`, pairId:`temporal-${index}`, face, flipped:true, matched:false }))
@@ -295,7 +437,8 @@ function startExercise(){
   saveProgress();
 
   if(current.type === 'temporal'){
-    setText('memora-prompt', 'Observa la ubicación de cada elemento.');
+    setTemporalQuestion();
+    setText('memora-prompt', 'Observa bien la ubicación de las 9 cartas.');
     setTimeout(() => {
       if(level().id !== current.id || state.phase !== 'preview') return;
       state.cards.forEach(card => card.flipped = false);
@@ -380,7 +523,11 @@ function resolvePair(){
 function nextTemporalQuestion(){
   state.temporalTarget = state.temporalQueue.shift() || null;
   const target = state.cards.find(card => card.id === state.temporalTarget);
-  setText('memora-prompt', target ? `¿Dónde estaba: ${target.face}?` : 'Ejercicio terminado.');
+  setText('memora-prompt', target ? 'Haz clic en el lugar donde estaba la carta indicada.' : 'Ejercicio terminado.');
+  setTemporalQuestion(
+    target ? `<span>Busca esta carta</span><strong>${escapeHTML(target.face)}</strong>` : '',
+    !!target
+  );
 }
 
 function handleTemporalClick(cardId){
@@ -454,10 +601,24 @@ function recordMiss(){
 }
 
 function completeExercise(){
+  const current = level();
+  const result = currentExerciseResult(current);
+  state.guidedResults.push(result);
   state.phase = 'complete';
   state.locked = false;
+  setTemporalQuestion();
   setText('memora-prompt', 'Ejercicio completado. Los datos quedaron en el panel profesional.');
   saveProgress();
+
+  if(state.levelIndex >= LEVELS.length - 1){
+    state.appMode = 'summary';
+    render();
+    return;
+  }
+
+  state.levelIndex++;
+  resetSession();
+  state.appMode = 'intro';
   render();
 }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memora-plus-web-v15';
+const CACHE_NAME = 'memora-plus-web-v24';
 
 const LOCAL_ASSETS = [
   './',
@@ -12,7 +12,8 @@ const LOCAL_ASSETS = [
   './firebase-service.js',
   './utils.js',
   './manifest.webmanifest',
-  './assets/logo-memora-plus.png'
+  './assets/logo-memora-plus.png',
+  './assets/auth-background.mp4'
 ];
 
 self.addEventListener('install', event => {

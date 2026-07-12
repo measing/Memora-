@@ -8,6 +8,7 @@ import {
 
 const USERS_KEY = 'memoraPlusUsers';
 const SESSION_KEY = 'memoraPlusSession';
+const ENTRY_ANIMATION_KEY = 'memoraPlusEntryAnimation';
 
 function readUsers(){
   try{
@@ -52,6 +53,10 @@ function setSession(user){
 function storeSession(session){
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
+}
+
+function markEntryAnimation(){
+  sessionStorage.setItem(ENTRY_ANIMATION_KEY, '1');
 }
 
 export function getCurrentSession(){
@@ -241,7 +246,10 @@ export function initLoginPage(){
       const googleButton = document.getElementById('auth-google');
       setAuthBusy(true, googleButton, 'Conectando con Google...');
       continueWithGoogle()
-        .then(() => location.href = 'index.html')
+        .then(() => {
+          markEntryAnimation();
+          location.href = 'index.html';
+        })
         .catch(error => {
           setStatus(error.message, 'danger');
           setAuthBusy(false, googleButton);
@@ -258,6 +266,7 @@ export function initLoginPage(){
     try{
       setAuthBusy(true, googleSubmit, 'Entrando...');
       await continueWithGoogle(document.getElementById('auth-google-email')?.value);
+      markEntryAnimation();
       location.href = 'index.html';
     }catch(error){
       setStatus(error.message, 'danger');
@@ -281,12 +290,22 @@ export function initLoginPage(){
       setAuthBusy(true, submit, mode === 'register' ? 'Creando cuenta...' : 'Ingresando...');
       if(mode === 'register') await createAccount({ email, password, name });
       else await login({ email, password });
+      markEntryAnimation();
       location.href = 'index.html';
     }catch(error){
       setStatus(authStatusMessage(error, mode), 'danger');
       setAuthBusy(false, submit);
     }
   });
+}
+
+export function playEntryAnimation(){
+  if(sessionStorage.getItem(ENTRY_ANIMATION_KEY) !== '1') return;
+  sessionStorage.removeItem(ENTRY_ANIMATION_KEY);
+  document.body.classList.add('memora-entering');
+  window.setTimeout(() => {
+    document.body.classList.remove('memora-entering');
+  }, 1200);
 }
 
 export function requireSessionForApp(){
