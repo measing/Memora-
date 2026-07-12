@@ -232,6 +232,15 @@ function renderExistingSession(){
   if(email) email.textContent = session.email;
 }
 
+function toggleAccountMenu(forceOpen){
+  const menu = document.getElementById('account-menu');
+  const button = document.getElementById('account-profile-button');
+  if(!menu || !button) return;
+  const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : menu.hidden;
+  menu.hidden = !nextOpen;
+  button.setAttribute('aria-expanded', String(nextOpen));
+}
+
 export function initLoginPage(){
   if(!document.body.classList.contains('login-page')) return;
   const params = new URLSearchParams(location.search);
@@ -321,18 +330,24 @@ export function initAccountBar(){
   if(!bar) return;
   const session = getCurrentSession();
   bar.innerHTML = session ? `
-    <div class="account-pill">
+    <button class="account-pill account-profile-button" id="account-profile-button" type="button" aria-haspopup="menu" aria-expanded="false">
       <span class="account-avatar">${getInitials(session.name)}</span>
       <span>
         <strong>${session.name}</strong>
         <small>${session.provider === 'google' ? 'Google' : 'Cuenta Memora+'}</small>
       </span>
+    </button>
+    <div class="account-menu" id="account-menu" role="menu" hidden>
+      <button id="account-logout" type="button" role="menuitem">Salir</button>
     </div>
-    <button class="account-link" id="account-logout" type="button">Salir</button>
   ` : `
     <a class="account-link primary" href="login.html">Ingresar</a>
     <a class="account-link" href="login.html?mode=register">Crear cuenta</a>
   `;
+  document.getElementById('account-profile-button')?.addEventListener('click', () => toggleAccountMenu());
+  document.addEventListener('click', event => {
+    if(!bar.contains(event.target)) toggleAccountMenu(false);
+  });
   document.getElementById('account-logout')?.addEventListener('click', () => {
     signOut().finally(() => {
       location.href = 'login.html';

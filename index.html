@@ -11,9 +11,12 @@
   <title>Memora+</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" href="assets/logo-memora-plus.png" />
-  <link rel="stylesheet" href="style.css?v=16" />
+  <link rel="stylesheet" href="style.css?v=25" />
 </head>
 <body>
+  <div class="top-lobby" id="lobby-bar" hidden>
+    <button class="lobby-pill" id="memora-back-lobby" type="button">Regresar al lobby</button>
+  </div>
   <div class="top-account" id="account-bar" aria-label="Cuenta"></div>
   <main class="memora-page">
     <section class="memora-plus-view" id="memora-view" aria-label="Memora+">
@@ -57,6 +60,7 @@
             <div class="memora-action-row">
               <button class="memora-primary-button" id="memora-start" type="button" hidden>Iniciar ejercicio</button>
               <button class="memora-secondary-button" id="memora-repeat" type="button">Repetir muestra</button>
+              <button class="memora-next-button" id="memora-next-level" type="button" hidden>Siguiente nivel</button>
             </div>
           </section>
 
@@ -65,6 +69,6 @@
     </section>
   </main>
 
-  <script type="module" src="main.js?v=19"></script>
+  <script type="module" src="main.js?v=27"></script>
 </body>
 </html>

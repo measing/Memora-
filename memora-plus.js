@@ -1,5 +1,5 @@
 import { escapeHTML } from './utils.js?v=71';
-import { getCurrentSession } from './account.js?v=12';
+import { getCurrentSession } from './account.js?v=14';
 import { saveFirebaseProgress } from './firebase-service.js?v=4';
 
 const STORAGE_KEY = 'memoraplusProgress';
@@ -100,6 +100,7 @@ const state = {
   temporalTarget:null,
   sequenceInput:[],
   sequenceTimer:null,
+  animateGameEntry:false,
   streak:0,
   guidedResults:[],
   progress:loadProgress()
@@ -189,14 +190,23 @@ function setAppChromeVisible(visible){
   const header = document.getElementById('memora-app-header');
   const layout = document.getElementById('memora-app-layout');
   const guide = document.getElementById('memora-guide');
+  const lobbyBar = document.getElementById('lobby-bar');
   if(header) header.hidden = true;
   if(layout) layout.hidden = !visible;
   if(guide) guide.hidden = visible;
+  if(lobbyBar) lobbyBar.hidden = !visible;
+  if(visible && layout && state.animateGameEntry){
+    layout.classList.remove('memora-game-enter');
+    requestAnimationFrame(() => layout.classList.add('memora-game-enter'));
+  }
+  if(visible) state.animateGameEntry = false;
 }
 
 function renderGuide(){
   const guide = document.getElementById('memora-guide');
   if(!guide) return;
+  guide.classList.remove('memora-guide-screen-enter', 'memora-guide-screen-exit');
+  requestAnimationFrame(() => guide.classList.add('memora-guide-screen-enter'));
 
   if(state.appMode === 'welcome'){
     guide.className = 'memora-guide memora-guide-welcome';
@@ -213,8 +223,7 @@ function renderGuide(){
       state.guidedResults = [];
       state.levelIndex = 0;
       resetSession();
-      state.appMode = 'intro';
-      render();
+      transitionToMode('intro');
     });
     return;
   }
@@ -247,15 +256,18 @@ function renderGuide(){
           </article>
         `).join('')}
       </div>
-      <button class="memora-guide-primary" id="memora-guide-restart" type="button">Hacer los ejercicios otra vez</button>
+      <div class="memora-summary-actions">
+        <button class="memora-guide-primary" id="memora-guide-restart" type="button">Hacer los ejercicios otra vez</button>
+        <button class="memora-guide-secondary memora-summary-exit" id="memora-summary-lobby" type="button">Salir</button>
+      </div>
     `;
     document.getElementById('memora-guide-restart')?.addEventListener('click', () => {
       state.guidedResults = [];
       state.levelIndex = 0;
       resetSession();
-      state.appMode = 'intro';
-      render();
+      transitionToMode('intro');
     });
+    document.getElementById('memora-summary-lobby')?.addEventListener('click', returnToLobby);
     return;
   }
 
@@ -273,7 +285,7 @@ function renderGuide(){
     </div>
     <button class="memora-guide-primary" id="memora-guide-begin" type="button">Comenzar ejercicio</button>
   `;
-  document.getElementById('memora-guide-begin')?.addEventListener('click', startExercise);
+  document.getElementById('memora-guide-begin')?.addEventListener('click', () => transitionToExercise());
 }
 
 function currentExerciseResult(current){
@@ -285,6 +297,44 @@ function currentExerciseResult(current){
     misses:state.misses,
     accuracy:attempts ? Math.round((state.hits / attempts) * 100) : 0
   };
+}
+
+function transitionToMode(mode){
+  const guide = document.getElementById('memora-guide');
+  if(!guide){
+    state.appMode = mode;
+    render();
+    return;
+  }
+  guide.classList.remove('memora-guide-screen-enter');
+  guide.classList.add('memora-guide-screen-exit');
+  window.setTimeout(() => {
+    state.appMode = mode;
+    render();
+  }, 280);
+}
+
+function transitionToExercise(){
+  const guide = document.getElementById('memora-guide');
+  state.animateGameEntry = true;
+  if(!guide){
+    startExercise();
+    return;
+  }
+  guide.classList.remove('memora-guide-screen-enter');
+  guide.classList.add('memora-guide-screen-exit');
+  window.setTimeout(startExercise, 280);
+}
+
+function returnToLobby(){
+  const wantsReturn = window.confirm('¿Seguro que quieres regresar al lobby? Se borrará todo el avance de este recorrido.');
+  if(!wantsReturn) return;
+  clearTimeout(state.sequenceTimer);
+  state.guidedResults = [];
+  state.levelIndex = 0;
+  resetSession();
+  state.appMode = 'welcome';
+  render();
 }
 
 function renderLevelList(){
@@ -330,7 +380,7 @@ function buildPairCards(current){
 }
 
 function promptForState(current){
-  if(state.phase === 'complete') return 'Ejercicio completado. Los datos quedaron en el panel profesional.';
+  if(state.phase === 'complete') return 'Ejercicio completado. Presiona el boton verde para continuar.';
   if(current.type === 'temporal'){
     if(state.phase === 'preview') return 'Observa bien la ubicación de las 9 cartas.';
     if(state.phase === 'play' && state.temporalTarget) return 'Haz clic en el lugar donde estaba la carta indicada.';
@@ -361,6 +411,19 @@ function render(){
   }
   renderBoard();
   updateStats();
+  updateActionButtons();
+}
+
+function updateActionButtons(){
+  const nextButton = document.getElementById('memora-next-level');
+  const repeatButton = document.getElementById('memora-repeat');
+  if(nextButton){
+    nextButton.hidden = state.phase !== 'complete';
+    nextButton.textContent = state.levelIndex >= LEVELS.length - 1 ? 'Ver resumen' : 'Siguiente nivel';
+  }
+  if(repeatButton){
+    repeatButton.hidden = state.phase === 'complete';
+  }
 }
 
 function renderBoard(){
@@ -607,25 +670,29 @@ function completeExercise(){
   state.phase = 'complete';
   state.locked = false;
   setTemporalQuestion();
-  setText('memora-prompt', 'Ejercicio completado. Los datos quedaron en el panel profesional.');
+  setText('memora-prompt', 'Ejercicio completado. Presiona el botón verde para continuar.');
   saveProgress();
+  render();
+}
 
+function goToNextLevel(){
+  if(state.phase !== 'complete') return;
   if(state.levelIndex >= LEVELS.length - 1){
-    state.appMode = 'summary';
-    render();
+    transitionToMode('summary');
     return;
   }
 
   state.levelIndex++;
   resetSession();
-  state.appMode = 'intro';
-  render();
+  transitionToMode('intro');
 }
 
 export function initMemoraPlus(){
   if(!document.getElementById('memora-plus-app')) return;
   document.getElementById('memora-start')?.addEventListener('click', startExercise);
+  document.getElementById('memora-back-lobby')?.addEventListener('click', returnToLobby);
   document.getElementById('memora-repeat')?.addEventListener('click', repeatSample);
+  document.getElementById('memora-next-level')?.addEventListener('click', goToNextLevel);
   document.getElementById('memora-large-mode')?.addEventListener('change', render);
   document.getElementById('memora-speed')?.addEventListener('change', () => {
     if(state.phase === 'idle' || state.phase === 'complete') render();
