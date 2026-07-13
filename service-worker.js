@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memora-plus-web-v35';
+const CACHE_NAME = 'memora-plus-web-v60';
 
 const LOCAL_ASSETS = [
   './',
@@ -13,7 +13,36 @@ const LOCAL_ASSETS = [
   './utils.js',
   './manifest.webmanifest',
   './assets/logo-memora-plus.png',
-  './assets/auth-background.mp4'
+  './assets/card-back-memora.png',
+  './assets/auth-background.mp4',
+  './assets/cards/level1-apple.png',
+  './assets/cards/level1-cup.png',
+  './assets/cards/level1-flower.png',
+  './assets/cards/level1-house.png',
+  './assets/cards/level1-key.png',
+  './assets/cards/level1-radio.png',
+  './assets/cards/level2-bread.png',
+  './assets/cards/level2-bus-stop.png',
+  './assets/cards/level2-bus.png',
+  './assets/cards/level2-butter.png',
+  './assets/cards/level2-door.png',
+  './assets/cards/level2-hammer.png',
+  './assets/cards/level2-key.png',
+  './assets/cards/level2-mate.png',
+  './assets/cards/level2-nail.png',
+  './assets/cards/level2-rain.png',
+  './assets/cards/level2-thermos.png',
+  './assets/cards/level2-umbrella.png',
+  './assets/cards/level5-bakery.png',
+  './assets/cards/level5-card.png',
+  './assets/cards/level5-field.png',
+  './assets/cards/level5-harvest.png',
+  './assets/cards/level5-market.png',
+  './assets/cards/level5-marraqueta.png',
+  './assets/cards/level5-news.png',
+  './assets/cards/level5-station.png',
+  './assets/cards/level5-train.png',
+  './assets/cards/level5-vegetables.png'
 ];
 
 self.addEventListener('install', event => {

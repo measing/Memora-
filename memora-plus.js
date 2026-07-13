@@ -1,8 +1,10 @@
 import { escapeHTML } from './utils.js?v=71';
-import { getCurrentSession } from './account.js?v=14';
-import { saveFirebaseProgress } from './firebase-service.js?v=4';
+import { getCurrentSession } from './account.js?v=17';
+import { saveFirebaseHistory, saveFirebaseProgress } from './firebase-service.js?v=7';
 
 const STORAGE_KEY = 'memoraplusProgress';
+const HISTORY_KEY = 'memoraplusHistory';
+const HISTORY_LIMIT = 50;
 const SPEEDS = {
   slow:{ preview:12000, sequence:6200, feedback:1400 },
   normal:{ preview:10000, sequence:4700, feedback:1000 },
@@ -18,12 +20,12 @@ const LEVELS = [
     explanation:'Encuentra las parejas iguales. Da vuelta dos cartas por turno y recuerda sus posiciones para completar todos los pares.',
     type:'pairs',
     pairs:[
-      { id:'apple', faces:['🍎 Manzana', '🍎 Manzana'] },
-      { id:'cup', faces:['☕ Taza', '☕ Taza'] },
-      { id:'house', faces:['🏠 Casa', '🏠 Casa'] },
-      { id:'flower', faces:['🌼 Flor', '🌼 Flor'] },
-      { id:'key', faces:['🔑 Llave', '🔑 Llave'] },
-      { id:'radio', faces:['📻 Radio', '📻 Radio'] }
+      { id:'apple', faces:[{ label:'Manzana', image:'assets/cards/level1-apple.png' }, { label:'Manzana', image:'assets/cards/level1-apple.png' }] },
+      { id:'cup', faces:[{ label:'Taza', image:'assets/cards/level1-cup.png' }, { label:'Taza', image:'assets/cards/level1-cup.png' }] },
+      { id:'house', faces:[{ label:'Casa', image:'assets/cards/level1-house.png' }, { label:'Casa', image:'assets/cards/level1-house.png' }] },
+      { id:'flower', faces:[{ label:'Flor', image:'assets/cards/level1-flower.png' }, { label:'Flor', image:'assets/cards/level1-flower.png' }] },
+      { id:'key', faces:[{ label:'Llave', image:'assets/cards/level1-key.png' }, { label:'Llave', image:'assets/cards/level1-key.png' }] },
+      { id:'radio', faces:[{ label:'Radio', image:'assets/cards/level1-radio.png' }, { label:'Radio', image:'assets/cards/level1-radio.png' }] }
     ]
   },
   {
@@ -34,12 +36,12 @@ const LEVELS = [
     explanation:'Busca dos cartas que tengan relación entre sí, como objeto y uso, lugar o complemento. No son iguales: están asociadas por significado.',
     type:'pairs',
     pairs:[
-      { id:'bread', faces:['🥖 Pan', '🧈 Mantequilla'] },
-      { id:'rain', faces:['☂️ Paraguas', '🌧️ Lluvia'] },
-      { id:'door', faces:['🔑 Llave', '🚪 Puerta'] },
-      { id:'mate', faces:['🧉 Mate', '🫖 Termo'] },
-      { id:'bus', faces:['🚌 Micro', '🚏 Paradero'] },
-      { id:'hammer', faces:['🔨 Martillo', '📌 Clavo'] }
+      { id:'bread', faces:[{ label:'Pan', image:'assets/cards/level2-bread.png' }, { label:'Mantequilla', image:'assets/cards/level2-butter.png' }] },
+      { id:'rain', faces:[{ label:'Paraguas', image:'assets/cards/level2-umbrella.png' }, { label:'Lluvia', image:'assets/cards/level2-rain.png' }] },
+      { id:'door', faces:[{ label:'Llave', image:'assets/cards/level2-key.png' }, { label:'Puerta', image:'assets/cards/level2-door.png' }] },
+      { id:'mate', faces:[{ label:'Mate', image:'assets/cards/level2-mate.png' }, { label:'Termo', image:'assets/cards/level2-thermos.png' }] },
+      { id:'bus', faces:[{ label:'Micro', image:'assets/cards/level2-bus.png' }, { label:'Paradero', image:'assets/cards/level2-bus-stop.png' }] },
+      { id:'hammer', faces:[{ label:'Martillo', image:'assets/cards/level2-hammer.png' }, { label:'Clavo', image:'assets/cards/level2-nail.png' }] }
     ]
   },
   {
@@ -49,7 +51,17 @@ const LEVELS = [
     prompt:'Observa las 9 cartas durante 10 segundos. Luego responde dónde estaba la carta que se pide.',
     explanation:'Observa la ubicación de 9 cartas. Después se ocultarán y tendrás que marcar dónde estaba la carta que se muestra en la pregunta.',
     type:'temporal',
-    items:['🍎 Manzana', '🔑 Llave', '📻 Radio', '🧉 Mate', '🚂 Tren', '🧰 Caja', '☂️ Paraguas', '🍞 Pan', '🌼 Flor']
+    items:[
+      { label:'Manzana', image:'assets/cards/level1-apple.png' },
+      { label:'Llave', image:'assets/cards/level1-key.png' },
+      { label:'Radio', image:'assets/cards/level1-radio.png' },
+      { label:'Flor', image:'assets/cards/level1-flower.png' },
+      { label:'Pan', image:'assets/cards/level2-bread.png' },
+      { label:'Paraguas', image:'assets/cards/level2-umbrella.png' },
+      { label:'Puerta', image:'assets/cards/level2-door.png' },
+      { label:'Mate', image:'assets/cards/level2-mate.png' },
+      { label:'Micro', image:'assets/cards/level2-bus.png' }
+    ]
   },
   {
     id:'sequence',
@@ -86,6 +98,20 @@ const LEVELS = [
   }
 ];
 
+const dailyLevel = LEVELS.find(item => item.id === 'daily');
+if(dailyLevel){
+  dailyLevel.pairs = [
+    { id:'marraqueta', faces:[{ label:'Marraqueta', image:'assets/cards/level5-marraqueta.png' }, { label:'Panaderia', image:'assets/cards/level5-bakery.png' }] },
+    { id:'train', faces:[{ label:'Tren', image:'assets/cards/level5-train.png' }, { label:'Estacion', image:'assets/cards/level5-station.png' }] },
+    { id:'feria', faces:[{ label:'Feria', image:'assets/cards/level5-market.png' }, { label:'Verduras', image:'assets/cards/level5-vegetables.png' }] },
+    { id:'field', faces:[{ label:'Campo', image:'assets/cards/level5-field.png' }, { label:'Cosecha', image:'assets/cards/level5-harvest.png' }] },
+    { id:'radio', faces:[{ label:'Radio', image:'assets/cards/level1-radio.png' }, { label:'Noticias', image:'assets/cards/level5-news.png' }] },
+    { id:'micro', faces:[{ label:'Micro', image:'assets/cards/level2-bus.png' }, { label:'Tarjeta', image:'assets/cards/level5-card.png' }] },
+    { id:'mate', faces:[{ label:'Mate', image:'assets/cards/level2-mate.png' }, { label:'Termo', image:'assets/cards/level2-thermos.png' }] },
+    { id:'tools', faces:[{ label:'Martillo', image:'assets/cards/level2-hammer.png' }, { label:'Clavo', image:'assets/cards/level2-nail.png' }] }
+  ];
+}
+
 const state = {
   appMode:'welcome',
   levelIndex:0,
@@ -100,7 +126,10 @@ const state = {
   temporalTarget:null,
   sequenceInput:[],
   sequenceTimer:null,
+  flipInIds:[],
+  flipOutIds:[],
   animateGameEntry:false,
+  summaryRecorded:false,
   streak:0,
   guidedResults:[],
   progress:loadProgress()
@@ -127,6 +156,174 @@ function saveProgress(){
   if(session?.source === 'firebase'){
     saveFirebaseProgress(session, state.progress).catch(() => {});
   }
+}
+
+function historyStorageKey(){
+  const session = getCurrentSession();
+  return `${HISTORY_KEY}:${session?.id || 'local'}`;
+}
+
+function loadHistory(){
+  try{
+    const history = JSON.parse(localStorage.getItem(historyStorageKey()) || '[]');
+    return Array.isArray(history) ? history : [];
+  }catch{
+    return [];
+  }
+}
+
+function saveHistory(history){
+  const cleanHistory = history.slice(0, HISTORY_LIMIT);
+  localStorage.setItem(historyStorageKey(), JSON.stringify(cleanHistory));
+  const session = getCurrentSession();
+  if(session?.source === 'firebase'){
+    saveFirebaseHistory(session, cleanHistory).catch(() => {});
+  }
+}
+
+function totalsFromResults(results){
+  const totals = results.reduce((acc, item) => ({
+    hits:acc.hits + Number(item.hits || 0),
+    misses:acc.misses + Number(item.misses || 0)
+  }), { hits:0, misses:0 });
+  const attempts = totals.hits + totals.misses;
+  return {
+    ...totals,
+    attempts,
+    accuracy:attempts ? Math.round((totals.hits / attempts) * 100) : 0
+  };
+}
+
+function recordCompletedJourney(){
+  if(state.summaryRecorded || state.guidedResults.length < LEVELS.length) return;
+  state.summaryRecorded = true;
+  const session = getCurrentSession();
+  const totals = totalsFromResults(state.guidedResults);
+  const entry = {
+    id:`session-${Date.now()}`,
+    completedAt:Date.now(),
+    userId:session?.id || 'local',
+    userName:session?.name || 'Usuario',
+    totals,
+    levels:state.guidedResults.map(item => ({ ...item }))
+  };
+  saveHistory([entry, ...loadHistory()]);
+}
+
+function historyAverages(history){
+  const count = history.length;
+  const totals = history.reduce((acc, item) => ({
+    hits:acc.hits + Number(item.totals?.hits || 0),
+    misses:acc.misses + Number(item.totals?.misses || 0),
+    accuracy:acc.accuracy + Number(item.totals?.accuracy || 0)
+  }), { hits:0, misses:0, accuracy:0 });
+  const byLevel = LEVELS.map((levelItem, index) => {
+    const levelTotals = history.reduce((acc, item) => {
+      const result = item.levels?.[index] || {};
+      return {
+        hits:acc.hits + Number(result.hits || 0),
+        misses:acc.misses + Number(result.misses || 0),
+        accuracy:acc.accuracy + Number(result.accuracy || 0)
+      };
+    }, { hits:0, misses:0, accuracy:0 });
+    return {
+      tag:levelItem.tag,
+      title:levelItem.title,
+      avgHits:count ? Math.round(levelTotals.hits / count) : 0,
+      avgMisses:count ? Math.round(levelTotals.misses / count) : 0,
+      avgAccuracy:count ? Math.round(levelTotals.accuracy / count) : 0
+    };
+  });
+  return {
+    count,
+    avgHits:count ? Math.round(totals.hits / count) : 0,
+    avgMisses:count ? Math.round(totals.misses / count) : 0,
+    avgAccuracy:count ? Math.round(totals.accuracy / count) : 0,
+    byLevel
+  };
+}
+
+function formatHistoryDate(value){
+  return new Date(value).toLocaleString('es-CL', {
+    day:'2-digit',
+    month:'2-digit',
+    year:'numeric',
+    hour:'2-digit',
+    minute:'2-digit'
+  });
+}
+
+function renderHistoryContent(){
+  const content = document.getElementById('memora-history-content');
+  if(!content) return;
+  const history = loadHistory();
+  const session = getCurrentSession();
+  if(session?.source === 'firebase' && history.length){
+    saveFirebaseHistory(session, history).catch(() => {});
+  }
+  const averages = historyAverages(history);
+  if(!history.length){
+    content.innerHTML = `
+      <div class="memora-history-empty">
+        <strong>Sin historial todavia</strong>
+        <p>Completa los 5 ejercicios para que se guarde tu primera partida y se calculen tus promedios.</p>
+      </div>
+    `;
+    return;
+  }
+
+  content.innerHTML = `
+    <section class="memora-history-stats" aria-label="Promedios generales">
+      <div><span>Partidas</span><strong>${averages.count}</strong></div>
+      <div><span>Aciertos promedio</span><strong>${averages.avgHits}</strong></div>
+      <div><span>Errores promedio</span><strong>${averages.avgMisses}</strong></div>
+      <div><span>Precision promedio</span><strong>${averages.avgAccuracy}%</strong></div>
+    </section>
+
+    <section class="memora-history-section">
+      <h3>Promedios por nivel</h3>
+      <div class="memora-history-levels">
+        ${averages.byLevel.map(item => `
+          <article>
+            <span>${escapeHTML(item.tag)}</span>
+            <strong>${escapeHTML(item.title)}</strong>
+            <p>${item.avgHits} aciertos prom. · ${item.avgMisses} errores prom. · ${item.avgAccuracy}% precision</p>
+          </article>
+        `).join('')}
+      </div>
+    </section>
+
+    <section class="memora-history-section">
+      <h3>Ultimas partidas</h3>
+      <div class="memora-history-sessions">
+        ${history.slice(0, 8).map(item => `
+          <article>
+            <div>
+              <strong>${formatHistoryDate(item.completedAt)}</strong>
+              <span>${escapeHTML(item.userName || 'Usuario')}</span>
+            </div>
+            <p>${item.totals?.hits || 0} aciertos · ${item.totals?.misses || 0} errores · ${item.totals?.accuracy || 0}% precision</p>
+          </article>
+        `).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function openHistoryModal(){
+  const modal = document.getElementById('memora-history-modal');
+  if(!modal) return;
+  renderHistoryContent();
+  modal.hidden = false;
+  document.body.classList.add('history-open');
+  document.getElementById('memora-history-close')?.focus();
+}
+
+function closeHistoryModal(){
+  const modal = document.getElementById('memora-history-modal');
+  if(!modal) return;
+  modal.hidden = true;
+  document.body.classList.remove('history-open');
 }
 
 function shuffle(items){
@@ -222,6 +419,7 @@ function renderGuide(){
     document.getElementById('memora-guide-start')?.addEventListener('click', () => {
       state.guidedResults = [];
       state.levelIndex = 0;
+      state.summaryRecorded = false;
       resetSession();
       transitionToMode('intro');
     });
@@ -264,10 +462,11 @@ function renderGuide(){
     document.getElementById('memora-guide-restart')?.addEventListener('click', () => {
       state.guidedResults = [];
       state.levelIndex = 0;
+      state.summaryRecorded = false;
       resetSession();
       transitionToMode('intro');
     });
-    document.getElementById('memora-summary-lobby')?.addEventListener('click', returnToLobby);
+    document.getElementById('memora-summary-lobby')?.addEventListener('click', returnToLobbyDirect);
     return;
   }
 
@@ -329,9 +528,14 @@ function transitionToExercise(){
 function returnToLobby(){
   const wantsReturn = window.confirm('¿Seguro que quieres regresar al lobby? Se borrará todo el avance de este recorrido.');
   if(!wantsReturn) return;
+  returnToLobbyDirect();
+}
+
+function returnToLobbyDirect(){
   clearTimeout(state.sequenceTimer);
   state.guidedResults = [];
   state.levelIndex = 0;
+  state.summaryRecorded = false;
   resetSession();
   state.appMode = 'welcome';
   render();
@@ -367,6 +571,8 @@ function resetSession(){
   state.temporalQueue = [];
   state.temporalTarget = null;
   state.sequenceInput = [];
+  state.flipInIds = [];
+  state.flipOutIds = [];
 }
 
 function buildPairCards(current){
@@ -379,8 +585,68 @@ function buildPairCards(current){
   }))));
 }
 
+function faceLabel(face){
+  return typeof face === 'object' ? face.label : face;
+}
+
+function faceImage(face){
+  return typeof face === 'object' ? face.image : '';
+}
+
+function renderCardFace(face){
+  const label = faceLabel(face);
+  const image = faceImage(face);
+  if(image){
+    return `<img class="memora-card-image" src="${escapeHTML(image)}" alt="${escapeHTML(label)}" />`;
+  }
+  return `<span class="memora-card-label text-only">${escapeHTML(label)}</span>`;
+}
+
+function renderPairGuideFace(face){
+  const label = faceLabel(face);
+  const image = faceImage(face);
+  if(image){
+    return `
+      <span class="memora-pair-face">
+        <img src="${escapeHTML(image)}" alt="" />
+        <span>${escapeHTML(label)}</span>
+      </span>
+    `;
+  }
+  return `<span class="memora-pair-face text-only">${escapeHTML(label)}</span>`;
+}
+
+function renderPairGuide(current){
+  const guide = document.getElementById('memora-pair-guide');
+  const playArea = document.getElementById('memora-play-area');
+  if(!guide || !playArea) return;
+  const showGuide = current.type === 'pairs' && state.phase !== 'idle';
+  guide.hidden = !showGuide;
+  playArea.classList.toggle('has-pair-guide', showGuide);
+  if(!showGuide){
+    guide.innerHTML = '';
+    return;
+  }
+
+  const matchedPairIds = new Set(state.cards.filter(card => card.matched).map(card => card.pairId));
+  guide.innerHTML = `
+    <div class="memora-pair-guide-title">
+      <span>Pares a encontrar</span>
+      <strong>${state.matched}/${current.pairs.length}</strong>
+    </div>
+    <div class="memora-pair-guide-list">
+      ${current.pairs.map(pair => `
+        <article class="${matchedPairIds.has(pair.id) ? 'matched' : ''}">
+          ${pair.faces.map(renderPairGuideFace).join('')}
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
+
 function promptForState(current){
   if(state.phase === 'complete') return 'Ejercicio completado. Presiona el boton verde para continuar.';
+  if(current.type === 'pairs' && state.phase === 'preview') return 'Observa las cartas. En unos segundos se ocultaran para comenzar.';
   if(current.type === 'temporal'){
     if(state.phase === 'preview') return 'Observa bien la ubicación de las 9 cartas.';
     if(state.phase === 'play' && state.temporalTarget) return 'Haz clic en el lugar donde estaba la carta indicada.';
@@ -409,6 +675,7 @@ function render(){
   if(current.type !== 'temporal' || state.phase !== 'play' || !state.temporalTarget){
     setTemporalQuestion();
   }
+  renderPairGuide(current);
   renderBoard();
   updateStats();
   updateActionButtons();
@@ -448,9 +715,18 @@ function renderBoard(){
   board.innerHTML = state.cards.map(card => {
     const visible = card.flipped || card.matched || state.phase === 'preview';
     const status = card.matched ? 'matched' : visible ? 'visible' : '';
+    const flipIn = state.flipInIds.includes(card.id);
+    const flipOut = state.flipOutIds.includes(card.id);
     return `
-      <button class="memora-card ${status}" type="button" data-card-id="${escapeHTML(card.id)}" ${card.matched || state.locked ? 'disabled' : ''}>
-        <span>${visible ? escapeHTML(card.face) : '?'}</span>
+      <button class="memora-card ${status} ${flipIn ? 'flip-in' : ''} ${flipOut ? 'flip-out' : ''}" type="button" data-card-id="${escapeHTML(card.id)}" ${card.matched || state.locked ? 'disabled' : ''}>
+        <span class="memora-card-inner">
+          <span class="memora-card-side memora-card-back" aria-hidden="${visible ? 'true' : 'false'}">
+            <span>?</span>
+          </span>
+          <span class="memora-card-side memora-card-front" aria-hidden="${visible ? 'false' : 'true'}">
+            ${renderCardFace(card.face)}
+          </span>
+        </span>
       </button>
     `;
   }).join('');
@@ -458,6 +734,8 @@ function renderBoard(){
   board.querySelectorAll('[data-card-id]').forEach(button => {
     button.addEventListener('click', () => handleCardClick(button.dataset.cardId));
   });
+  state.flipInIds = [];
+  state.flipOutIds = [];
 }
 
 function renderSequence(board, controls, current){
@@ -484,11 +762,19 @@ function renderSequence(board, controls, current){
   });
 }
 
+function unlockAfterFlip(levelId){
+  setTimeout(() => {
+    if(level().id !== levelId || state.phase !== 'play') return;
+    state.locked = false;
+    render();
+  }, 620);
+}
+
 function startExercise(){
   resetSession();
   const current = level();
   state.appMode = 'exercise';
-  state.phase = current.type === 'pairs' ? 'play' : 'preview';
+  state.phase = 'preview';
   state.cards = current.type === 'temporal'
     ? shuffle(current.items).map((face, index) => ({ id:`temporal-${index}`, pairId:`temporal-${index}`, face, flipped:true, matched:false }))
     : current.type === 'pairs'
@@ -499,15 +785,28 @@ function startExercise(){
   state.progress.lastLevel = current.title;
   saveProgress();
 
-  if(current.type === 'temporal'){
+  if(current.type === 'pairs'){
+    setText('memora-prompt', 'Observa las cartas. En unos segundos se ocultaran para comenzar.');
+    state.sequenceTimer = setTimeout(() => {
+      if(level().id !== current.id || state.phase !== 'preview') return;
+      state.flipOutIds = state.cards.map(card => card.id);
+      state.phase = 'play';
+      state.locked = true;
+      render();
+      unlockAfterFlip(current.id);
+    }, Math.max(3600, Math.round(speed().preview * .55)));
+  }else if(current.type === 'temporal'){
     setTemporalQuestion();
     setText('memora-prompt', 'Observa bien la ubicación de las 9 cartas.');
     setTimeout(() => {
       if(level().id !== current.id || state.phase !== 'preview') return;
       state.cards.forEach(card => card.flipped = false);
+      state.flipOutIds = state.cards.map(card => card.id);
       state.phase = 'play';
+      state.locked = true;
       nextTemporalQuestion();
       render();
+      unlockAfterFlip(current.id);
     }, speed().preview);
   }else if(current.type === 'sequence'){
     setText('memora-prompt', 'Memoriza el orden de los colores.');
@@ -525,17 +824,19 @@ function startExercise(){
 function repeatSample(){
   const current = level();
   if(current.type === 'pairs'){
+    state.flipInIds = state.cards.filter(card => !card.matched).map(card => card.id);
     state.cards.forEach(card => {
       if(!card.matched) card.flipped = true;
     });
     state.locked = true;
     render();
     setTimeout(() => {
+      state.flipOutIds = state.cards.filter(card => !card.matched).map(card => card.id);
       state.cards.forEach(card => {
         if(!card.matched) card.flipped = false;
       });
-      state.locked = false;
       render();
+      unlockAfterFlip(current.id);
     }, speed().feedback + 600);
     return;
   }
@@ -552,6 +853,7 @@ function handleCardClick(cardId){
   const card = state.cards.find(item => item.id === cardId);
   if(!card || card.flipped || card.matched) return;
   card.flipped = true;
+  state.flipInIds = [card.id];
   state.flipped.push(card.id);
   if(state.flipped.length === 2) resolvePair();
   render();
@@ -574,11 +876,12 @@ function resolvePair(){
   }else{
     recordMiss();
     setTimeout(() => {
+      state.flipOutIds = [first.id, second.id];
       first.flipped = false;
       second.flipped = false;
       state.flipped = [];
-      state.locked = false;
       render();
+      unlockAfterFlip(level().id);
     }, speed().feedback);
   }
 }
@@ -588,7 +891,7 @@ function nextTemporalQuestion(){
   const target = state.cards.find(card => card.id === state.temporalTarget);
   setText('memora-prompt', target ? 'Haz clic en el lugar donde estaba la carta indicada.' : 'Ejercicio terminado.');
   setTemporalQuestion(
-    target ? `<span>Busca esta carta</span><strong>${escapeHTML(target.face)}</strong>` : '',
+    target ? `<span>Busca esta carta</span><strong>${escapeHTML(faceLabel(target.face))}</strong>` : '',
     !!target
   );
 }
@@ -598,6 +901,7 @@ function handleTemporalClick(cardId){
   const selected = state.cards.find(card => card.id === cardId);
   if(!selected || selected.matched) return;
   selected.flipped = true;
+  state.flipInIds = [selected.id];
   state.locked = true;
   if(cardId === state.temporalTarget){
     selected.matched = true;
@@ -606,9 +910,13 @@ function handleTemporalClick(cardId){
   }else{
     recordMiss();
     const target = state.cards.find(card => card.id === state.temporalTarget);
-    if(target) target.flipped = true;
+    if(target){
+      target.flipped = true;
+      state.flipInIds = target.id === selected.id ? [selected.id] : [selected.id, target.id];
+    }
   }
   setTimeout(() => {
+    state.flipOutIds = state.cards.filter(card => !card.matched && card.flipped).map(card => card.id);
     state.cards.forEach(card => {
       if(!card.matched) card.flipped = false;
     });
@@ -678,6 +986,7 @@ function completeExercise(){
 function goToNextLevel(){
   if(state.phase !== 'complete') return;
   if(state.levelIndex >= LEVELS.length - 1){
+    recordCompletedJourney();
     transitionToMode('summary');
     return;
   }
@@ -689,6 +998,18 @@ function goToNextLevel(){
 
 export function initMemoraPlus(){
   if(!document.getElementById('memora-plus-app')) return;
+  document.addEventListener('click', event => {
+    if(event.target.closest('#account-history-button')){
+      openHistoryModal();
+      return;
+    }
+    if(event.target.closest('#memora-history-close') || event.target.id === 'memora-history-modal'){
+      closeHistoryModal();
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if(event.key === 'Escape') closeHistoryModal();
+  });
   document.getElementById('memora-start')?.addEventListener('click', startExercise);
   document.getElementById('memora-back-lobby')?.addEventListener('click', returnToLobby);
   document.getElementById('memora-repeat')?.addEventListener('click', repeatSample);

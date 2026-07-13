@@ -11,13 +11,25 @@
   <title>Memora+</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" href="assets/logo-memora-plus.png" />
-  <link rel="stylesheet" href="style.css?v=25" />
+  <link rel="stylesheet" href="style.css?v=41" />
 </head>
 <body>
   <div class="top-lobby" id="lobby-bar" hidden>
     <button class="lobby-pill" id="memora-back-lobby" type="button">Regresar al lobby</button>
   </div>
   <div class="top-account" id="account-bar" aria-label="Cuenta"></div>
+  <div class="memora-history-modal" id="memora-history-modal" role="dialog" aria-modal="true" aria-labelledby="memora-history-title" hidden>
+    <div class="memora-history-panel">
+      <div class="memora-history-header">
+        <div>
+          <span>Seguimiento personal</span>
+          <h2 id="memora-history-title">Historial</h2>
+        </div>
+        <button class="memora-history-close" id="memora-history-close" type="button" aria-label="Cerrar historial">x</button>
+      </div>
+      <div id="memora-history-content"></div>
+    </div>
+  </div>
   <main class="memora-page">
     <section class="memora-plus-view" id="memora-view" aria-label="Memora+">
       <div class="memora-plus-app" id="memora-plus-app">
@@ -46,16 +58,23 @@
               </div>
             </div>
 
-            <div class="memora-session-strip">
-              <div><span>Aciertos</span><strong id="memora-hits">0</strong></div>
-              <div><span>Errores</span><strong id="memora-misses">0</strong></div>
-              <div><span>Progreso</span><strong id="memora-progress">0/0</strong></div>
-            </div>
-
             <p class="memora-prompt" id="memora-prompt"></p>
             <div class="memora-temporal-question" id="memora-temporal-question" hidden></div>
-            <div id="memora-board" class="memora-board"></div>
-            <div id="memora-sequence-controls" class="memora-sequence-controls" hidden></div>
+
+            <div class="memora-play-area" id="memora-play-area">
+              <div class="memora-play-main">
+                <div id="memora-board" class="memora-board"></div>
+                <div id="memora-sequence-controls" class="memora-sequence-controls" hidden></div>
+                <div class="memora-pair-guide" id="memora-pair-guide" aria-label="Pares a encontrar" hidden></div>
+              </div>
+              <aside class="memora-side-panel" aria-label="Seguimiento del ejercicio">
+                <div class="memora-session-strip">
+                  <div><span>Aciertos</span><strong id="memora-hits">0</strong></div>
+                  <div><span>Errores</span><strong id="memora-misses">0</strong></div>
+                  <div><span>Progreso</span><strong id="memora-progress">0/0</strong></div>
+                </div>
+              </aside>
+            </div>
 
             <div class="memora-action-row">
               <button class="memora-primary-button" id="memora-start" type="button" hidden>Iniciar ejercicio</button>
@@ -69,6 +88,6 @@
     </section>
   </main>
 
-  <script type="module" src="main.js?v=27"></script>
+  <script type="module" src="main.js?v=40"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=2';
+import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js?v=3';
 
 let firebaseApp = null;
 let firebaseAuth = null;
@@ -195,6 +195,18 @@ async function saveFirestoreDocument(collection, id, data, idToken){
   });
 }
 
+async function saveRealtimeDocument(collection, id, data, idToken = ''){
+  if(!firebaseConfig.databaseURL) return;
+  const baseUrl = firebaseConfig.databaseURL.replace(/\/$/, '');
+  const authQuery = idToken ? `?auth=${encodeURIComponent(idToken)}` : '';
+  const response = await fetch(`${baseUrl}/${collection}/${encodeURIComponent(id)}.json${authQuery}`, {
+    method:'PATCH',
+    headers:{ 'Content-Type':'application/json' },
+    body:JSON.stringify(data)
+  });
+  if(!response.ok) throw new Error('No se pudo guardar en Realtime Database.');
+}
+
 async function getProfile(uid){
   const { realtimeDb, firestoreDb } = await initFirebaseData();
   const { databaseModule, firestoreModule } = await loadFirebaseDataModules();
@@ -221,6 +233,7 @@ async function saveProfile(user, extra = {}){
   };
 
   const { databaseModule, firestoreModule } = await loadFirebaseDataModules();
+  let savedProfile = false;
   if(firestoreDb){
     const userRef = firestoreModule.doc(firestoreDb, 'users', user.uid);
     const previous = await firestoreModule.getDoc(userRef);
@@ -230,7 +243,7 @@ async function saveProfile(user, extra = {}){
       ...profile,
       createdAt:previousData.createdAt || profile.createdAt
     }, { merge:true });
-    return profile;
+    savedProfile = true;
   }
   if(realtimeDb){
     const userRef = databaseModule.ref(realtimeDb, `users/${user.uid}`);
@@ -241,6 +254,10 @@ async function saveProfile(user, extra = {}){
       ...profile,
       createdAt:previousData.createdAt || profile.createdAt
     });
+    savedProfile = true;
+  }
+  if(!savedProfile && user.uid){
+    await saveRealtimeDocument('users', user.uid, profile, extra.idToken || '');
   }
   return profile;
 }
@@ -267,14 +284,18 @@ export async function createFirebaseAccount({ email, password, name }){
       displayName:name,
       returnSecureToken:false
     }).catch(() => {});
-    saveFirestoreDocument('users', session.id, {
+    const profile = {
       uid:session.id,
       email:session.email,
       name:session.name,
       provider:'email',
       createdAt:Date.now(),
       updatedAt:Date.now()
-    }, session.idToken).catch(() => {});
+    };
+    Promise.allSettled([
+      saveFirestoreDocument('users', session.id, profile, session.idToken),
+      saveRealtimeDocument('users', session.id, profile, session.idToken)
+    ]);
     return session;
   }catch(error){
     throw error?.message ? error : mapFirebaseError(error);
@@ -316,26 +337,75 @@ export async function signOutFirebase(){
   await authModule.signOut(auth);
 }
 
-export async function saveFirebaseProgress(session, progress){
+export async function saveFirebaseUserSession(session){
   if(!isFirebaseConfigured() || !session?.id) return;
+  const profile = {
+    uid:session.id,
+    email:session.email || '',
+    name:session.name || 'Usuario',
+    provider:session.provider || 'email',
+    updatedAt:Date.now(),
+    createdAt:session.signedAt || Date.now()
+  };
   if(session.idToken){
-    await saveFirestoreDocument('progress', session.id, {
-      ...progress,
-      updatedAt:Date.now()
-    }, session.idToken);
+    await Promise.allSettled([
+      saveFirestoreDocument('users', session.id, profile, session.idToken),
+      saveRealtimeDocument('users', session.id, profile, session.idToken)
+    ]);
     return;
   }
   const { realtimeDb, firestoreDb } = await initFirebaseData();
   const { databaseModule, firestoreModule } = await loadFirebaseDataModules();
+  if(firestoreDb){
+    await firestoreModule.setDoc(firestoreModule.doc(firestoreDb, 'users', session.id), profile, { merge:true });
+  }
+  if(realtimeDb){
+    await databaseModule.set(databaseModule.ref(realtimeDb, `users/${session.id}`), profile);
+  }
+}
+
+export async function saveFirebaseProgress(session, progress){
+  if(!isFirebaseConfigured() || !session?.id) return;
   const payload = {
     ...progress,
     updatedAt:Date.now()
   };
+  if(session.idToken){
+    await Promise.allSettled([
+      saveFirestoreDocument('progress', session.id, payload, session.idToken),
+      saveRealtimeDocument('progress', session.id, payload, session.idToken)
+    ]);
+    return;
+  }
+  const { realtimeDb, firestoreDb } = await initFirebaseData();
+  const { databaseModule, firestoreModule } = await loadFirebaseDataModules();
   if(firestoreDb){
     await firestoreModule.setDoc(firestoreModule.doc(firestoreDb, 'progress', session.id), payload, { merge:true });
-    return;
   }
   if(realtimeDb){
     await databaseModule.set(databaseModule.ref(realtimeDb, `progress/${session.id}`), payload);
+  }
+}
+
+export async function saveFirebaseHistory(session, history){
+  if(!isFirebaseConfigured() || !session?.id) return;
+  const payload = {
+    sessions:history,
+    updatedAt:Date.now()
+  };
+  if(session.idToken){
+    await Promise.allSettled([
+      saveFirestoreDocument('history', session.id, payload, session.idToken),
+      saveRealtimeDocument('history', session.id, payload, session.idToken)
+    ]);
+    return;
+  }
+  const { realtimeDb, firestoreDb } = await initFirebaseData();
+  const { databaseModule, firestoreModule } = await loadFirebaseDataModules();
+  if(firestoreDb){
+    await firestoreModule.setDoc(firestoreModule.doc(firestoreDb, 'history', session.id), payload, { merge:true });
+  }
+  if(realtimeDb){
+    await databaseModule.set(databaseModule.ref(realtimeDb, `history/${session.id}`), payload);
   }
 }

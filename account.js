@@ -3,8 +3,9 @@ import {
   loginFirebase,
   continueWithGoogleFirebase,
   hasFirebaseConfig,
+  saveFirebaseUserSession,
   signOutFirebase
-} from './firebase-service.js?v=4';
+} from './firebase-service.js?v=7';
 
 const USERS_KEY = 'memoraPlusUsers';
 const SESSION_KEY = 'memoraPlusSession';
@@ -329,7 +330,11 @@ export function initAccountBar(){
   const bar = document.getElementById('account-bar');
   if(!bar) return;
   const session = getCurrentSession();
+  if(session?.source === 'firebase'){
+    saveFirebaseUserSession(session).catch(() => {});
+  }
   bar.innerHTML = session ? `
+    <button class="account-history-pill" id="account-history-button" type="button">Historial</button>
     <button class="account-pill account-profile-button" id="account-profile-button" type="button" aria-haspopup="menu" aria-expanded="false">
       <span class="account-avatar">${getInitials(session.name)}</span>
       <span>

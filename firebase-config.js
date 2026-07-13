@@ -1,7 +1,7 @@
 export const firebaseConfig = {
   apiKey: 'AIzaSyC8TrkAjLQmV-fya3uHQ1OmEy2LE-zRYmo',
   authDomain: 'memoramas.firebaseapp.com',
-  databaseURL: '',
+  databaseURL: 'https://memoramas-default-rtdb.firebaseio.com',
   projectId: 'memoramas',
   storageBucket: 'memoramas.firebasestorage.app',
   messagingSenderId: '221958724650',
