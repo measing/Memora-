@@ -188,9 +188,9 @@ function numberOrZero(value){
 
 function normalizeLevelResult(item = {}){
   return {
-    h:numberOrZero(item.h ?? item.hits),
-    m:numberOrZero(item.m ?? item.misses),
-    a:numberOrZero(item.a ?? item.accuracy)
+    hits:numberOrZero(item.hits ?? item.h),
+    misses:numberOrZero(item.misses ?? item.m),
+    accuracy:numberOrZero(item.accuracy ?? item.a)
   };
 }
 
@@ -315,7 +315,7 @@ async function renderHistoryContent(){
         ${history.map((item, index) => `
           <article class="memora-history-session-card">
             <div class="memora-history-session-head"><div><strong>Partida ${history.length - index}</strong><span>${formatHistoryDate(item.completedAt)}</span></div><p>${item.totals.hits} aciertos - ${item.totals.misses} errores - ${item.totals.accuracy}% precision</p></div>
-            <div class="memora-history-session-levels">${LEVELS.map((levelItem, levelIndex) => { const result = item.levels[levelIndex] || normalizeLevelResult(); return `<div><span>${escapeHTML(levelItem.tag)}</span><strong>${escapeHTML(levelItem.title)}</strong><p>${result.h} aciertos - ${result.m} errores - ${result.a}% precision</p></div>`; }).join('')}</div>
+            <div class="memora-history-session-levels">${LEVELS.map((levelItem, levelIndex) => { const result = item.levels[levelIndex] || normalizeLevelResult(); return `<div><span>${escapeHTML(levelItem.tag)}</span><strong>${escapeHTML(levelItem.title)}</strong><p>${result.hits} aciertos - ${result.misses} errores - ${result.accuracy}% precision</p></div>`; }).join('')}</div>
           </article>
         `).join('')}
       </div>
