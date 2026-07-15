@@ -2055,3 +2055,366 @@ body[data-auth-mode="register"] .auth-tabs::before{
     display:none;
   }
 }
+
+@media(max-width:640px){
+  html,
+  body{
+    overflow-x:hidden;
+  }
+
+  .memora-page{
+    width:100%;
+    padding:108px 8px 18px;
+  }
+
+  .top-account{
+    top:8px;
+    right:8px;
+    max-width:calc(100% - 16px);
+    gap:6px;
+  }
+
+  .top-lobby{
+    top:58px;
+    left:8px;
+    right:8px;
+  }
+
+  .top-lobby[hidden] + .top-account{
+    top:8px;
+  }
+
+  .lobby-pill,
+  .account-history-pill{
+    min-height:42px;
+    padding:0 12px;
+    font-size:12px;
+    white-space:nowrap;
+  }
+
+  .lobby-pill{
+    width:100%;
+  }
+
+  .account-pill{
+    min-width:0;
+    padding:6px 8px;
+  }
+
+  .account-pill > div:not(.account-avatar){
+    min-width:0;
+  }
+
+  .account-pill strong,
+  .account-pill span{
+    max-width:92px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .account-avatar{
+    width:36px;
+    height:36px;
+    font-size:13px;
+  }
+
+  .memora-guide{
+    min-height:calc(var(--app-height) - 134px);
+    align-content:center;
+    justify-items:center;
+    gap:18px;
+    padding:18px 14px;
+  }
+
+  .memora-guide-logo{
+    width:min(250px,78vw);
+  }
+
+  .memora-guide-copy{
+    max-width:100%;
+    justify-items:center;
+    text-align:center;
+  }
+
+  .memora-guide-copy h1{
+    font-size:34px;
+    line-height:1.02;
+  }
+
+  .memora-guide-copy p{
+    font-size:16px;
+  }
+
+  .memora-guide-primary,
+  .memora-guide-secondary{
+    width:100%;
+    min-height:54px;
+    padding:0 16px;
+  }
+
+  .memora-guide-level{
+    grid-template-columns:1fr;
+    justify-items:stretch;
+  }
+
+  .memora-level-preview{
+    width:100%;
+  }
+
+  .memora-guided-layout{
+    transform:none;
+  }
+
+  .memora-activity-panel{
+    padding:14px;
+  }
+
+  .memora-activity-top{
+    gap:12px;
+  }
+
+  .memora-activity-top h2{
+    font-size:26px;
+  }
+
+  .memora-access-controls{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  .memora-access-controls label,
+  .memora-toggle{
+    width:100%;
+  }
+
+  .memora-access-controls select,
+  .memora-toggle{
+    min-height:42px;
+  }
+
+  .memora-prompt{
+    padding:12px;
+    font-size:16px;
+  }
+
+  .memora-play-area,
+  .memora-play-area.has-pair-guide{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+
+  .memora-side-panel{
+    order:-1;
+  }
+
+  .memora-side-panel .memora-session-strip{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+
+  .memora-session-strip{
+    gap:6px;
+    margin-bottom:10px;
+  }
+
+  .memora-session-strip div,
+  .memora-side-panel .memora-session-strip div{
+    min-height:58px;
+    padding:8px;
+  }
+
+  .memora-session-strip span{
+    font-size:10px;
+  }
+
+  .memora-session-strip strong{
+    font-size:24px;
+  }
+
+  .memora-board,
+  .memora-board-pairs,
+  .memora-board-temporal{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+    min-height:0;
+  }
+
+  .memora-card,
+  .memora-plus-app.large-cards .memora-card{
+    min-height:92px;
+    aspect-ratio:1.12 / 1;
+  }
+
+  .memora-card-side{
+    border-width:2px;
+  }
+
+  .memora-card-back::before{
+    inset:6px;
+    border-width:2px;
+  }
+
+  .memora-card-back::after{
+    inset:26% 20%;
+  }
+
+  .memora-card-image{
+    inset:-10%;
+    width:120%;
+    height:120%;
+  }
+
+  .memora-empty-state{
+    min-height:220px;
+    font-size:16px;
+  }
+
+  .memora-pair-guide{
+    padding:10px;
+  }
+
+  .memora-pair-guide-list{
+    grid-template-columns:1fr;
+  }
+
+  .memora-pair-guide article{
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+  }
+
+  .memora-pair-face img{
+    width:116%;
+    margin:-8%;
+  }
+
+  .memora-sequence-display{
+    min-height:210px;
+    gap:12px;
+    padding:16px;
+  }
+
+  .memora-sequence-dot{
+    width:54px;
+    height:54px;
+  }
+
+  .memora-sequence-controls{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .memora-action-row{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+
+  .memora-primary-button,
+  .memora-secondary-button,
+  .memora-next-button{
+    width:100%;
+    min-height:52px;
+    margin-left:0;
+  }
+
+  .memora-next-button{
+    min-height:58px;
+  }
+
+  .memora-summary-actions{
+    grid-template-columns:1fr;
+  }
+
+  .memora-final-stats,
+  .memora-result-list{
+    grid-template-columns:1fr;
+  }
+
+  .memora-history-modal{
+    align-items:start;
+    padding:8px;
+  }
+
+  .memora-history-panel{
+    width:100%;
+    max-height:calc(var(--app-height) - 16px);
+    padding:14px;
+  }
+
+  .memora-history-header{
+    gap:10px;
+  }
+
+  .memora-history-header h2{
+    font-size:34px;
+  }
+
+  .memora-history-stats.compact{
+    grid-template-columns:1fr;
+  }
+
+  .memora-history-session-levels{
+    grid-template-columns:1fr;
+  }
+
+  .memora-history-session-head{
+    display:grid;
+    gap:8px;
+  }
+
+  .memora-history-session-head p{
+    text-align:left;
+  }
+
+  .auth-shell{
+    padding:10px;
+  }
+
+  .auth-card{
+    width:100%;
+    max-height:calc(var(--app-height) - 20px);
+    padding:16px;
+  }
+
+  .auth-logo{
+    height:104px;
+  }
+}
+
+@media(max-width:380px){
+  .memora-page{
+    padding-left:6px;
+    padding-right:6px;
+  }
+
+  .account-history-pill{
+    padding:0 10px;
+  }
+
+  .account-pill strong,
+  .account-pill span{
+    max-width:74px;
+  }
+
+  .memora-guide-copy h1{
+    font-size:30px;
+  }
+
+  .memora-activity-panel{
+    padding:10px;
+  }
+
+  .memora-board,
+  .memora-board-pairs,
+  .memora-board-temporal{
+    gap:7px;
+  }
+
+  .memora-card,
+  .memora-plus-app.large-cards .memora-card{
+    min-height:84px;
+  }
+
+  .memora-session-strip strong{
+    font-size:22px;
+  }
+}
