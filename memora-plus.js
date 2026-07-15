@@ -1,6 +1,6 @@
 import { escapeHTML } from './utils.js?v=71';
-import { getCurrentSession } from './account.js?v=17';
-import { saveFirebaseHistory, saveFirebaseProgress } from './firebase-service.js?v=7';
+import { getCurrentSession } from './account.js?v=20';
+import { loadFirebaseHistory, saveFirebaseHistory, saveFirebaseProgress } from './firebase-service.js?v=10';
 
 const STORAGE_KEY = 'memoraplusProgress';
 const HISTORY_KEY = 'memoraplusHistory';
@@ -166,14 +166,14 @@ function historyStorageKey(){
 function loadHistory(){
   try{
     const history = JSON.parse(localStorage.getItem(historyStorageKey()) || '[]');
-    return Array.isArray(history) ? history : [];
+    return normalizeHistory(history);
   }catch{
     return [];
   }
 }
 
 function saveHistory(history){
-  const cleanHistory = history.slice(0, HISTORY_LIMIT);
+  const cleanHistory = normalizeHistory(history);
   localStorage.setItem(historyStorageKey(), JSON.stringify(cleanHistory));
   const session = getCurrentSession();
   if(session?.source === 'firebase'){
@@ -181,10 +181,50 @@ function saveHistory(history){
   }
 }
 
+function numberOrZero(value){
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function normalizeLevelResult(item = {}){
+  return {
+    h:numberOrZero(item.h ?? item.hits),
+    m:numberOrZero(item.m ?? item.misses),
+    a:numberOrZero(item.a ?? item.accuracy)
+  };
+}
+
+function normalizeSessionEntry(entry = {}){
+  const levels = Array.isArray(entry.levels)
+    ? entry.levels.slice(0, LEVELS.length).map(normalizeLevelResult)
+    : [];
+  const fallbackTotals = totalsFromResults(levels);
+  const rawTotals = entry.totals || fallbackTotals;
+  const hits = numberOrZero(rawTotals.hits ?? fallbackTotals.hits);
+  const misses = numberOrZero(rawTotals.misses ?? fallbackTotals.misses);
+  const attempts = numberOrZero(rawTotals.attempts) || hits + misses;
+  const accuracy = numberOrZero(rawTotals.accuracy) || (attempts ? Math.round((hits / attempts) * 100) : 0);
+
+  return {
+    id:entry.id || `session-${entry.completedAt || Date.now()}`,
+    completedAt:numberOrZero(entry.completedAt) || Date.now(),
+    totals:{ hits, misses, attempts, accuracy },
+    levels
+  };
+}
+
+function normalizeHistory(history){
+  if(!Array.isArray(history)) return [];
+  return history
+    .map(normalizeSessionEntry)
+    .filter(item => item.levels.length)
+    .slice(0, HISTORY_LIMIT);
+}
+
 function totalsFromResults(results){
   const totals = results.reduce((acc, item) => ({
-    hits:acc.hits + Number(item.hits || 0),
-    misses:acc.misses + Number(item.misses || 0)
+    hits:acc.hits + numberOrZero(item.h ?? item.hits),
+    misses:acc.misses + numberOrZero(item.m ?? item.misses)
   }), { hits:0, misses:0 });
   const attempts = totals.hits + totals.misses;
   return {
@@ -197,50 +237,14 @@ function totalsFromResults(results){
 function recordCompletedJourney(){
   if(state.summaryRecorded || state.guidedResults.length < LEVELS.length) return;
   state.summaryRecorded = true;
-  const session = getCurrentSession();
   const totals = totalsFromResults(state.guidedResults);
   const entry = {
     id:`session-${Date.now()}`,
     completedAt:Date.now(),
-    userId:session?.id || 'local',
-    userName:session?.name || 'Usuario',
     totals,
-    levels:state.guidedResults.map(item => ({ ...item }))
+    levels:state.guidedResults.map(normalizeLevelResult)
   };
   saveHistory([entry, ...loadHistory()]);
-}
-
-function historyAverages(history){
-  const count = history.length;
-  const totals = history.reduce((acc, item) => ({
-    hits:acc.hits + Number(item.totals?.hits || 0),
-    misses:acc.misses + Number(item.totals?.misses || 0),
-    accuracy:acc.accuracy + Number(item.totals?.accuracy || 0)
-  }), { hits:0, misses:0, accuracy:0 });
-  const byLevel = LEVELS.map((levelItem, index) => {
-    const levelTotals = history.reduce((acc, item) => {
-      const result = item.levels?.[index] || {};
-      return {
-        hits:acc.hits + Number(result.hits || 0),
-        misses:acc.misses + Number(result.misses || 0),
-        accuracy:acc.accuracy + Number(result.accuracy || 0)
-      };
-    }, { hits:0, misses:0, accuracy:0 });
-    return {
-      tag:levelItem.tag,
-      title:levelItem.title,
-      avgHits:count ? Math.round(levelTotals.hits / count) : 0,
-      avgMisses:count ? Math.round(levelTotals.misses / count) : 0,
-      avgAccuracy:count ? Math.round(levelTotals.accuracy / count) : 0
-    };
-  });
-  return {
-    count,
-    avgHits:count ? Math.round(totals.hits / count) : 0,
-    avgMisses:count ? Math.round(totals.misses / count) : 0,
-    avgAccuracy:count ? Math.round(totals.accuracy / count) : 0,
-    byLevel
-  };
 }
 
 function formatHistoryDate(value){
@@ -253,47 +257,71 @@ function formatHistoryDate(value){
   });
 }
 
-function renderHistoryContent(){
+async function renderHistoryContent(){
   const content = document.getElementById('memora-history-content');
   if(!content) return;
-  const history = loadHistory();
   const session = getCurrentSession();
-  if(session?.source === 'firebase' && history.length){
-    saveFirebaseHistory(session, history).catch(() => {});
+  let history = loadHistory();
+
+  content.innerHTML = `
+    <div class="memora-history-empty">
+      <strong>Cargando historial...</strong>
+      <p>Estamos buscando tus partidas guardadas.</p>
+    </div>
+  `;
+
+  if(session?.source === 'firebase'){
+    try{
+      const firebaseHistory = await loadFirebaseHistory(session);
+      if(firebaseHistory.length){
+        history = normalizeHistory(firebaseHistory);
+        localStorage.setItem(historyStorageKey(), JSON.stringify(history));
+        saveFirebaseHistory(session, history).catch(() => {});
+      }else if(history.length){
+        saveFirebaseHistory(session, history).catch(() => {});
+      }
+    }catch{
+      if(!history.length){
+        content.innerHTML = `
+          <div class="memora-history-empty">
+            <strong>No pudimos cargar tu historial</strong>
+            <p>Revisa tu conexion e intenta abrir el historial nuevamente.</p>
+          </div>
+        `;
+        return;
+      }
+    }
   }
-  const averages = historyAverages(history);
+
+  history = normalizeHistory(history);
   if(!history.length){
     content.innerHTML = `
       <div class="memora-history-empty">
         <strong>Sin historial todavia</strong>
-        <p>Completa los 5 ejercicios para que se guarde tu primera partida y se calculen tus promedios.</p>
+        <p>Completa los 5 ejercicios para que se guarde tu primera partida.</p>
       </div>
     `;
     return;
   }
 
   content.innerHTML = `
-    <section class="memora-history-stats" aria-label="Promedios generales">
-      <div><span>Partidas</span><strong>${averages.count}</strong></div>
-      <div><span>Aciertos promedio</span><strong>${averages.avgHits}</strong></div>
-      <div><span>Errores promedio</span><strong>${averages.avgMisses}</strong></div>
-      <div><span>Precision promedio</span><strong>${averages.avgAccuracy}%</strong></div>
+    <section class="memora-history-stats compact" aria-label="Partidas guardadas">
+      <div><span>Partidas registradas</span><strong>${history.length}</strong></div>
     </section>
 
     <section class="memora-history-section">
-      <h3>Promedios por nivel</h3>
-      <div class="memora-history-levels">
-        ${averages.byLevel.map(item => `
-          <article>
-            <span>${escapeHTML(item.tag)}</span>
-            <strong>${escapeHTML(item.title)}</strong>
-            <p>${item.avgHits} aciertos prom. · ${item.avgMisses} errores prom. · ${item.avgAccuracy}% precision</p>
+      <h3>Partidas de los 5 ejercicios</h3>
+      <div class="memora-history-sessions detailed">
+        ${history.map((item, index) => `
+          <article class="memora-history-session-card">
+            <div class="memora-history-session-head"><div><strong>Partida ${history.length - index}</strong><span>${formatHistoryDate(item.completedAt)}</span></div><p>${item.totals.hits} aciertos - ${item.totals.misses} errores - ${item.totals.accuracy}% precision</p></div>
+            <div class="memora-history-session-levels">${LEVELS.map((levelItem, levelIndex) => { const result = item.levels[levelIndex] || normalizeLevelResult(); return `<div><span>${escapeHTML(levelItem.tag)}</span><strong>${escapeHTML(levelItem.title)}</strong><p>${result.h} aciertos - ${result.m} errores - ${result.a}% precision</p></div>`; }).join('')}</div>
           </article>
         `).join('')}
       </div>
     </section>
 
-    <section class="memora-history-section">
+    <section class="memora-history-section" hidden>
       <h3>Ultimas partidas</h3>
       <div class="memora-history-sessions">
         ${history.slice(0, 8).map(item => `
@@ -313,9 +341,9 @@ function renderHistoryContent(){
 function openHistoryModal(){
   const modal = document.getElementById('memora-history-modal');
   if(!modal) return;
-  renderHistoryContent();
   modal.hidden = false;
   document.body.classList.add('history-open');
+  renderHistoryContent();
   document.getElementById('memora-history-close')?.focus();
 }
 

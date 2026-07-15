@@ -157,6 +157,24 @@ async function authRequest(action, payload){
   return data;
 }
 
+async function refreshIdToken(session){
+  if(!session?.refreshToken) return session?.idToken || '';
+  if(session.idToken && Number(session.tokenExpiresAt || 0) > Date.now() + 60000){
+    return session.idToken;
+  }
+  const response = await withTimeout(fetch(`https://securetoken.googleapis.com/v1/token?key=${firebaseConfig.apiKey}`, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+    body:new URLSearchParams({
+      grant_type:'refresh_token',
+      refresh_token:session.refreshToken
+    })
+  }), 10000);
+  const data = await response.json().catch(() => ({}));
+  if(!response.ok) return session.idToken || '';
+  return data.id_token || session.idToken || '';
+}
+
 function firestoreValue(value){
   if(value === null || value === undefined) return { nullValue:null };
   if(typeof value === 'boolean') return { booleanValue:value };
@@ -175,6 +193,27 @@ function firestoreValue(value){
     };
   }
   return { stringValue:String(value) };
+}
+
+function firestorePlainValue(value){
+  if(!value || typeof value !== 'object') return null;
+  if('nullValue' in value) return null;
+  if('booleanValue' in value) return Boolean(value.booleanValue);
+  if('integerValue' in value) return Number(value.integerValue);
+  if('doubleValue' in value) return Number(value.doubleValue);
+  if('stringValue' in value) return value.stringValue;
+  if('timestampValue' in value) return value.timestampValue;
+  if('arrayValue' in value){
+    return (value.arrayValue.values || []).map(item => firestorePlainValue(item));
+  }
+  if('mapValue' in value){
+    return firestorePlainFields(value.mapValue.fields || {});
+  }
+  return null;
+}
+
+function firestorePlainFields(fields = {}){
+  return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, firestorePlainValue(value)]));
 }
 
 function firestoreFields(data){
@@ -389,8 +428,10 @@ export async function saveFirebaseProgress(session, progress){
 
 export async function saveFirebaseHistory(session, history){
   if(!isFirebaseConfigured() || !session?.id) return;
+  const cleanHistory = Array.isArray(history) ? history : [];
   const payload = {
-    sessions:history,
+    totalSessions:cleanHistory.length,
+    sessions:cleanHistory,
     updatedAt:Date.now()
   };
   if(session.idToken){
@@ -408,4 +449,65 @@ export async function saveFirebaseHistory(session, history){
   if(realtimeDb){
     await databaseModule.set(databaseModule.ref(realtimeDb, `history/${session.id}`), payload);
   }
+}
+
+function normalizeHistorySessions(data){
+  const sessions = Array.isArray(data) ? data : data?.sessions;
+  if(Array.isArray(sessions)) return sessions;
+  if(sessions && typeof sessions === 'object'){
+    return Object.values(sessions)
+      .filter(Boolean)
+      .sort((a, b) => Number(b.completedAt || 0) - Number(a.completedAt || 0));
+  }
+  return [];
+}
+
+export async function loadFirebaseHistory(session){
+  if(!isFirebaseConfigured() || !session?.id) return [];
+  const idToken = await refreshIdToken(session).catch(() => session.idToken || '');
+
+  if(firebaseConfig.databaseURL){
+    try{
+      const baseUrl = firebaseConfig.databaseURL.replace(/\/$/, '');
+      const authQuery = idToken ? `?auth=${encodeURIComponent(idToken)}` : '';
+      const response = await withTimeout(fetch(`${baseUrl}/history/${encodeURIComponent(session.id)}.json${authQuery}`), 10000);
+      if(response.ok){
+        const data = await response.json().catch(() => null);
+        const history = normalizeHistorySessions(data);
+        if(history.length) return history;
+      }
+    }catch{}
+  }
+
+  if(firebaseConfig.projectId && idToken){
+    try{
+      const documentPath = `history/${encodeURIComponent(session.id)}`;
+      const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/${documentPath}`;
+      const response = await withTimeout(fetch(url, {
+        headers:{ 'Authorization':`Bearer ${idToken}` }
+      }), 10000);
+      if(response.ok){
+        const document = await response.json().catch(() => null);
+        return normalizeHistorySessions(firestorePlainFields(document?.fields || {}));
+      }
+    }catch{}
+  }
+
+  try{
+    const { realtimeDb, firestoreDb } = await initFirebaseData();
+    const { databaseModule, firestoreModule } = await loadFirebaseDataModules();
+    if(firestoreDb){
+      const snapshot = await firestoreModule.getDoc(firestoreModule.doc(firestoreDb, 'history', session.id));
+      if(snapshot.exists()){
+        const history = normalizeHistorySessions(snapshot.data());
+        if(history.length) return history;
+      }
+    }
+    if(realtimeDb){
+      const snapshot = await databaseModule.get(databaseModule.ref(realtimeDb, `history/${session.id}`));
+      return snapshot.exists() ? normalizeHistorySessions(snapshot.val()) : [];
+    }
+  }catch{}
+
+  return [];
 }

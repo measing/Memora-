@@ -5,7 +5,7 @@ import {
   hasFirebaseConfig,
   saveFirebaseUserSession,
   signOutFirebase
-} from './firebase-service.js?v=7';
+} from './firebase-service.js?v=10';
 
 const USERS_KEY = 'memoraPlusUsers';
 const SESSION_KEY = 'memoraPlusSession';

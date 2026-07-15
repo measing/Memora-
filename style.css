@@ -1435,6 +1435,10 @@ button{
   margin-bottom:20px;
 }
 
+.memora-history-stats.compact{
+  grid-template-columns:minmax(220px,320px);
+}
+
 .memora-history-stats div{
   display:grid;
   gap:7px;
@@ -1520,6 +1524,52 @@ button{
 .memora-history-sessions article div{
   display:grid;
   gap:4px;
+}
+
+.memora-history-sessions.detailed{
+  gap:12px;
+}
+
+.memora-history-sessions.detailed article{
+  display:grid;
+  align-items:stretch;
+  justify-content:stretch;
+  gap:12px;
+}
+
+.memora-history-session-card > p{
+  display:none;
+}
+
+.memora-history-session-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+}
+
+.memora-history-session-head p{
+  margin:0;
+  text-align:right;
+}
+
+.memora-history-session-levels{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:8px;
+}
+
+.memora-history-session-levels div{
+  border:1px solid rgba(21,94,80,.14);
+  border-radius:8px;
+  background:#fff;
+  padding:10px;
+}
+
+.memora-history-session-levels strong{
+  display:block;
+  margin-top:4px;
+  min-height:36px;
 }
 
 .memora-history-empty{
@@ -1927,12 +1977,19 @@ body[data-auth-mode="register"] .auth-tabs::before{
   }
 
   .memora-history-stats,
-  .memora-history-levels{
+  .memora-history-levels,
+  .memora-history-session-levels{
     grid-template-columns:1fr;
   }
 
-  .memora-history-sessions article{
+  .memora-history-sessions article,
+  .memora-history-session-head{
     display:grid;
+    text-align:left;
+  }
+
+  .memora-history-session-head p{
+    text-align:left;
   }
 
   .auth-shell{
