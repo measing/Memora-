@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memora-plus-web-v71';
+const CACHE_NAME = 'memora-plus-web-v75';
 
 const LOCAL_ASSETS = [
   './',
@@ -13,6 +13,7 @@ const LOCAL_ASSETS = [
   './utils.js',
   './manifest.webmanifest',
   './assets/logo-memora-plus.png',
+  './assets/guide-character.png',
   './assets/card-back-memora.png',
   './assets/auth-background.mp4',
   './assets/cards/level1-apple.png',

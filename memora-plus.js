@@ -1,5 +1,5 @@
 import { escapeHTML } from './utils.js?v=71';
-import { getCurrentSession } from './account.js?v=20';
+import { getCurrentSession } from './account.js?v=25';
 import { loadFirebaseHistory, saveFirebaseHistory, saveFirebaseProgress } from './firebase-service.js?v=10';
 
 const STORAGE_KEY = 'memoraplusProgress';
@@ -470,6 +470,42 @@ function instructionFor(current = level()){
   return 'Observa la secuencia de colores y símbolos. Luego presiónalos en el mismo orden.';
 }
 
+function rulesFor(current = level()){
+  if(current.id === 'visual') return [
+    'Da vuelta solo dos cartas por turno.',
+    'Si las cartas son iguales, quedan descubiertas.',
+    `Completa los ${exerciseTotal(current)} pares para terminar la actividad.`
+  ];
+  if(current.id === 'semantic') return [
+    'Busca objetos que se relacionen entre sí, aunque no sean iguales.',
+    'Da vuelta dos cartas por intento y observa bien sus posiciones.',
+    `Completa las ${exerciseTotal(current)} asociaciones para avanzar.`
+  ];
+  if(current.id === 'temporal') return [
+    'Primero mira las 9 cartas durante 10 segundos.',
+    'Luego las cartas se ocultarán.',
+    'Lee la palabra pedida y toca el lugar donde estaba esa carta.'
+  ];
+  if(current.id === 'sequence') return [
+    'Observa con calma el orden de colores y símbolos.',
+    'Espera a que termine la muestra antes de responder.',
+    'Repite la secuencia tocando los colores en el mismo orden.'
+  ];
+  return [
+    'Busca relaciones de la vida cotidiana.',
+    'Une cada objeto con su complemento, lugar o situación.',
+    `Completa las ${exerciseTotal(current)} relaciones para cerrar el recorrido.`
+  ];
+}
+
+function guideSpeechFor(current = level()){
+  if(current.id === 'visual') return 'Primero observa bien. En esta actividad debes encontrar cartas iguales, de a dos por turno.';
+  if(current.id === 'semantic') return 'Aquí no buscas cartas iguales: buscas objetos que tengan una relación clara entre ellos.';
+  if(current.id === 'temporal') return 'En esta actividad mira las ubicaciones con atención. Después te pediré una carta usando solo su palabra.';
+  if(current.id === 'sequence') return 'Mira la secuencia completa antes de tocar. La clave es repetir el mismo orden.';
+  return 'Esta actividad usa objetos cotidianos. Busca que dos cartas van juntas por costumbre, uso o situación.';
+}
+
 function renderGuide(){
   const guide = document.getElementById('memora-guide');
   if(!guide) return;
@@ -555,9 +591,26 @@ function renderGuide(){
   const current = level();
   guide.className = 'memora-guide memora-guide-level';
   guide.innerHTML = `
-    <div class="memora-guide-copy">
-      <span>${escapeHTML(current.tag)}</span>
-      <h1>${escapeHTML(current.title)}</h1>
+    <div class="memora-character-scene">
+      <div class="memora-character-wrap" aria-hidden="true">
+        <div class="memora-character-card">
+          <img class="memora-character" src="assets/guide-character.png" alt="" />
+        </div>
+      </div>
+      <div class="memora-guide-copy memora-character-copy">
+        <span>${escapeHTML(current.tag)}</span>
+        <h1>${escapeHTML(current.title)}</h1>
+        <p class="memora-character-bubble">${escapeHTML(guideSpeechFor(current))}</p>
+      </div>
+    </div>
+    <div class="memora-rules-panel" aria-label="Reglas de la actividad">
+      <div>
+        <span>Reglas</span>
+        <strong>Antes de comenzar</strong>
+      </div>
+      <ol>
+        ${rulesFor(current).map(rule => `<li>${escapeHTML(rule)}</li>`).join('')}
+      </ol>
       <p>${escapeHTML(current.explanation)}</p>
     </div>
     <div class="memora-level-preview">
@@ -569,6 +622,7 @@ function renderGuide(){
     </div>
   `;
   document.getElementById('memora-guide-begin')?.addEventListener('click', () => transitionToExercise());
+  announce(`${current.tag}. ${current.title}. ${guideSpeechFor(current)} ${rulesFor(current).join(' ')}`);
 }
 
 function currentExerciseResult(current){

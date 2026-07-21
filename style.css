@@ -209,6 +209,138 @@ button{
   align-items:center;
 }
 
+.memora-character-scene{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:minmax(96px,150px) minmax(0,1fr);
+  align-items:center;
+  gap:clamp(16px,3vw,28px);
+  width:100%;
+}
+
+.memora-character-wrap{
+  display:grid;
+  justify-items:center;
+}
+
+.memora-character-card{
+  width:clamp(96px,13vw,150px);
+  aspect-ratio:1;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(31,119,104,.22);
+  border-radius:8px;
+  background:linear-gradient(180deg,#ffffff,#eef8f5);
+  box-shadow:0 18px 32px rgba(23,51,44,.12);
+  animation:memoraCharacterFloat 2.5s ease-in-out infinite;
+}
+
+.memora-character{
+  width:72%;
+  height:72%;
+  object-fit:contain;
+  image-rendering:auto;
+  animation:memoraCharacterHello 1.15s ease-in-out infinite alternate;
+  transform-origin:50% 86%;
+}
+
+.memora-character-copy{
+  max-width:860px;
+}
+
+.memora-character-bubble{
+  position:relative;
+  width:fit-content;
+  max-width:100%;
+  padding:16px 18px;
+  border:1px solid rgba(31,119,104,.22);
+  border-radius:8px;
+  background:#fff8e7;
+  box-shadow:0 14px 26px rgba(23,51,44,.10);
+}
+
+.memora-character-bubble::before{
+  content:"";
+  position:absolute;
+  left:-10px;
+  top:24px;
+  width:18px;
+  height:18px;
+  border-left:1px solid rgba(31,119,104,.22);
+  border-bottom:1px solid rgba(31,119,104,.22);
+  background:#fff8e7;
+  transform:rotate(45deg);
+}
+
+.memora-rules-panel{
+  display:grid;
+  gap:14px;
+  align-self:stretch;
+  padding:20px;
+  border:1px solid rgba(31,119,104,.18);
+  border-radius:8px;
+  background:#f7fbf9;
+}
+
+.memora-rules-panel > div{
+  display:grid;
+  gap:4px;
+}
+
+.memora-rules-panel span{
+  color:var(--accent);
+  font-size:13px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+
+.memora-rules-panel strong{
+  color:var(--primary-dark);
+  font-size:clamp(22px,3vw,32px);
+  line-height:1.05;
+  font-weight:900;
+}
+
+.memora-rules-panel ol{
+  display:grid;
+  gap:10px;
+  padding-left:22px;
+}
+
+.memora-rules-panel li,
+.memora-rules-panel p{
+  color:#38504a;
+  font-size:17px;
+  line-height:1.35;
+  font-weight:800;
+}
+
+.memora-rules-panel li::marker{
+  color:var(--primary);
+  font-weight:900;
+}
+
+@keyframes memoraCharacterFloat{
+  0%,
+  100%{
+    transform:translateY(0);
+  }
+
+  50%{
+    transform:translateY(-8px);
+  }
+}
+
+@keyframes memoraCharacterHello{
+  from{
+    transform:rotate(-2deg) scale(1);
+  }
+
+  to{
+    transform:rotate(4deg) scale(1.035);
+  }
+}
+
 .memora-guide-level .memora-guide-primary,
 .memora-guide-summary .memora-guide-primary{
   grid-column:1/-1;
@@ -1943,6 +2075,11 @@ body[data-auth-mode="register"] .auth-tabs::before{
     animation:none;
   }
 
+  .memora-character-card,
+  .memora-character{
+    animation:none;
+  }
+
   .memora-card.flip-in .memora-card-inner,
   .memora-card.flip-out .memora-card-inner{
     animation:none;
@@ -1956,6 +2093,18 @@ body[data-auth-mode="register"] .auth-tabs::before{
 @media(max-width:720px){
   .memora-page{
     padding:74px 10px 22px;
+  }
+
+  .memora-character-scene{
+    grid-template-columns:1fr;
+    justify-items:center;
+    text-align:center;
+  }
+
+  .memora-character-bubble::before{
+    left:50%;
+    top:-9px;
+    transform:translateX(-50%) rotate(135deg);
   }
 
   .top-lobby{
@@ -2563,11 +2712,22 @@ body[data-auth-mode="register"] .auth-tabs::before{
 }
 
 .memora-welcome-actions{
-  display:flex;
+  width:min(460px,100%);
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
   align-items:center;
   justify-content:center;
   gap:12px;
-  flex-wrap:wrap;
+}
+
+.memora-welcome-actions .memora-guide-primary,
+.memora-welcome-actions .memora-guide-secondary{
+  width:100%;
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 18px;
 }
 
 #memora-guide-listen,

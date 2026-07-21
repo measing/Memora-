@@ -10,6 +10,7 @@ import {
 const USERS_KEY = 'memoraPlusUsers';
 const SESSION_KEY = 'memoraPlusSession';
 const ENTRY_ANIMATION_KEY = 'memoraPlusEntryAnimation';
+const GUEST_ACCESS_KEY = 'memoraPlusGuestAccess';
 const GUEST_SESSION = { id:'guest', email:'', name:'Invitado', provider:'guest', source:'local' };
 
 function readUsers(){
@@ -64,6 +65,10 @@ function markEntryAnimation(){
 export function getCurrentSession(){
   try{
     const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if(session?.provider === 'guest' && sessionStorage.getItem(GUEST_ACCESS_KEY) !== '1'){
+      localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
     return session && session.id ? session : null;
   }catch{
     return null;
@@ -71,6 +76,7 @@ export function getCurrentSession(){
 }
 
 export function startGuestSession(){
+  sessionStorage.setItem(GUEST_ACCESS_KEY, '1');
   localStorage.setItem(SESSION_KEY, JSON.stringify({ ...GUEST_SESSION, signedAt:Date.now() }));
   return getCurrentSession();
 }
@@ -78,6 +84,7 @@ export function startGuestSession(){
 export async function signOut(){
   await signOutFirebase().catch(() => {});
   localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(GUEST_ACCESS_KEY);
 }
 
 async function createLocalAccount({ email, password, name, provider = 'email' }){
@@ -334,7 +341,10 @@ export function playEntryAnimation(){
 export function requireSessionForApp(){
   const appHasAccountGate = !!document.getElementById('account-bar');
   if(!appHasAccountGate) return true;
-  if(!getCurrentSession()) startGuestSession();
+  if(!getCurrentSession()){
+    location.replace('login.html');
+    return false;
+  }
   return true;
 }
 
