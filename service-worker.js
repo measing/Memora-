@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memora-plus-web-v66';
+const CACHE_NAME = 'memora-plus-web-v69';
 
 const LOCAL_ASSETS = [
   './',

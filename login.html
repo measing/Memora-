@@ -7,16 +7,16 @@
   <title>Ingresar - Memora+</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" href="assets/logo-memora-plus.png" />
-  <link rel="stylesheet" href="style.css?v=14" />
+  <link rel="stylesheet" href="style.css?v=47" />
 </head>
 <body class="login-page">
-  <video class="auth-video-bg" autoplay muted loop playsinline aria-hidden="true">
-    <source src="assets/auth-background.mp4" type="video/mp4" />
-  </video>
   <main class="auth-shell">
     <section class="auth-card" aria-label="Acceso Memora+">
       <img class="auth-logo" src="assets/logo-memora-plus.png" alt="Memora+" />
-      <p class="auth-intro">Guarda sesiones, revisa progreso y continúa el acompañamiento desde cualquier visita a la página.</p>
+      <p class="auth-intro">Puedes comenzar de inmediato. Crear una cuenta es opcional y permite guardar el progreso en otros dispositivos.</p>
+
+      <a class="auth-guest" id="auth-guest" href="index.html">Comenzar sin cuenta</a>
+      <p class="auth-guest-note">No necesitas correo ni contraseña. El progreso quedará guardado solamente en este dispositivo.</p>
 
       <section id="auth-session-panel" class="auth-session-panel" hidden>
         <div class="auth-session-avatar" id="auth-session-avatar">M+</div>
@@ -48,23 +48,11 @@
         </label>
 
         <button class="auth-submit" id="auth-submit" type="submit">Ingresar</button>
-        <button class="auth-google" id="auth-google" type="button">
-          <span>G</span>
-          Continuar con Google
-        </button>
-        <div class="auth-google-panel" id="auth-google-panel" hidden>
-          <label>
-            Correo Google
-            <input id="auth-google-email" type="email" autocomplete="email" placeholder="tu@gmail.com" />
-          </label>
-          <button class="auth-submit" id="auth-google-submit" type="button">Entrar con Google</button>
-        </div>
-        <p class="auth-google-note">Este acceso queda guardado localmente en este navegador. La conexión real con Google puede activarse luego con las credenciales del proyecto.</p>
         <div class="auth-status" id="auth-status" aria-live="polite"></div>
       </form>
     </section>
   </main>
 
-  <script type="module" src="main.js?v=44"></script>
+  <script type="module" src="main.js?v=45"></script>
 </body>
 </html>

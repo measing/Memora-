@@ -739,6 +739,10 @@ button{
   grid-template-columns:repeat(3,minmax(0,1fr));
 }
 
+.memora-board-temporal.cards-4{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
 .memora-empty-state{
   grid-column:1/-1;
   min-height:300px;
@@ -762,7 +766,11 @@ button{
   background:transparent;
   color:var(--ink);
   cursor:pointer;
-  perspective:900px;
+  perspective:950px;
+  -webkit-perspective:950px;
+  transform:translateZ(0);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
   padding:0;
 }
 
@@ -773,13 +781,14 @@ button{
   height:100%;
   min-height:inherit;
   transform-style:preserve-3d;
-  transition:transform .5s cubic-bezier(.4,0,.2,1);
+  -webkit-transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(.22,1,.36,1);
   will-change:transform;
 }
 
 .memora-card.visible .memora-card-inner,
 .memora-card.matched .memora-card-inner{
-  transform:rotateY(180deg);
+  transform:rotateY(180deg) translateZ(0);
 }
 
 .memora-card.flip-in .memora-card-inner{
@@ -810,10 +819,14 @@ button{
   border-radius:8px;
   overflow:hidden;
   backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  transform-style:preserve-3d;
+  -webkit-transform-style:preserve-3d;
   box-shadow:0 8px 16px rgba(20,45,39,.10);
 }
 
 .memora-card-back{
+  transform:rotateY(0deg) translateZ(1px);
   background:
     radial-gradient(circle at 18% 22%, rgba(139,204,64,.18), transparent 24%),
     radial-gradient(circle at 82% 76%, rgba(14,133,82,.12), transparent 26%),
@@ -846,7 +859,7 @@ button{
   position:absolute;
   background:var(--primary-dark);
   color:var(--ink);
-  transform:rotateY(180deg);
+  transform:rotateY(180deg) translateZ(1px);
 }
 
 .memora-card.matched .memora-card-front{
@@ -2416,5 +2429,236 @@ body[data-auth-mode="register"] .auth-tabs::before{
 
   .memora-session-strip strong{
     font-size:22px;
+  }
+}
+
+/* Formato vertical de naipe (aprox. 2,5 x 3,5) */
+.memora-card,
+.memora-plus-app.large-cards .memora-card{
+  min-height:0;
+  aspect-ratio:5 / 7;
+  border-radius:15px;
+}
+
+.memora-card-side,
+.memora-board-pairs .memora-card-side{
+  border-width:3px;
+  border-radius:15px;
+  box-shadow:
+    0 10px 18px rgba(20,45,39,.18),
+    0 2px 3px rgba(20,45,39,.12),
+    inset 0 0 0 1px rgba(255,255,255,.7);
+}
+
+.memora-card-front{
+  background:#fff;
+}
+
+.memora-card-image{
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:12px;
+}
+
+.memora-card-back::before{
+  inset:9px;
+  border-radius:10px;
+}
+
+.memora-card:active:not(:disabled){
+  transform:translateY(2px);
+}
+
+@media(max-width:640px){
+  .memora-board-pairs .memora-card,
+  .memora-plus-app.large-cards .memora-board-pairs .memora-card,
+  .memora-board-temporal .memora-card,
+  .memora-plus-app.large-cards .memora-board-temporal .memora-card{
+    min-height:0;
+    aspect-ratio:5 / 7;
+  }
+
+  .memora-card-side,
+  .memora-board-pairs .memora-card-side{
+    border-radius:10px;
+  }
+
+  .memora-card-image{
+    inset:0;
+    width:100%;
+    height:100%;
+    border-radius:7px;
+  }
+}
+
+@media(max-width:640px){
+  .memora-board-temporal.cards-4{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+/* Accesibilidad integral para personas mayores */
+.auth-guest{
+  display:flex;
+  min-height:60px;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  background:var(--primary);
+  color:#fff;
+  padding:12px 20px;
+  font-size:20px;
+  font-weight:900;
+  text-decoration:none;
+}
+
+.auth-guest-note{
+  color:var(--muted);
+  font-size:16px;
+  line-height:1.45;
+  text-align:center;
+}
+
+.account-menu a{
+  display:block;
+  color:inherit;
+  padding:12px 16px;
+  font-weight:800;
+  text-decoration:none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible{
+  outline:4px solid #f5a623;
+  outline-offset:3px;
+}
+
+.memora-access-controls select,
+.memora-access-controls label,
+.memora-toggle,
+.memora-session-strip span,
+.account-pill,
+.account-history-pill{
+  font-size:max(16px,1em);
+}
+
+.memora-action-row{
+  flex-wrap:wrap;
+}
+
+.memora-sequence-dot b{
+  color:#fff;
+  font-size:clamp(28px,5vw,48px);
+  line-height:1;
+  text-shadow:0 2px 4px rgba(0,0,0,.45);
+}
+
+.memora-color-button span{
+  color:#fff;
+  font-size:24px;
+  font-weight:900;
+  text-shadow:0 1px 3px rgba(0,0,0,.45);
+}
+
+.memora-plus-app.interface-large{
+  font-size:112.5%;
+}
+
+.memora-plus-app.interface-xlarge{
+  font-size:125%;
+}
+
+.memora-plus-app.interface-xlarge .memora-prompt,
+.memora-plus-app.interface-xlarge .memora-guide-copy p{
+  font-size:24px;
+}
+
+.memora-plus-app.interface-xlarge button,
+.memora-plus-app.interface-xlarge select{
+  min-height:56px;
+  font-size:18px;
+}
+
+.memora-plus-app.companion-mode .memora-prompt{
+  border-left:8px solid var(--accent);
+  background:#fff8e7;
+}
+
+.memora-plus-app.reduced-animations *,
+.memora-plus-app.reduced-animations *::before,
+.memora-plus-app.reduced-animations *::after{
+  animation-duration:.01ms!important;
+  transition-duration:.01ms!important;
+}
+
+@media(max-width:640px){
+  .memora-access-controls{
+    grid-template-columns:1fr;
+  }
+
+  .memora-access-controls label,
+  .memora-toggle{
+    font-size:16px;
+  }
+
+  .memora-action-row{
+    grid-template-columns:1fr;
+  }
+
+  .memora-action-row button{
+    width:100%;
+  }
+}
+
+/* Tablero móvil compacto inspirado en MemoraBet: las parejas permanecen en
+   cuatro columnas y caben completas en el ancho del teléfono. */
+@media(max-width:640px){
+  .memora-board-pairs{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:7px;
+  }
+
+  .memora-board-pairs .memora-card,
+  .memora-plus-app.large-cards .memora-board-pairs .memora-card{
+    min-height:0;
+    aspect-ratio:5 / 7;
+  }
+
+  .memora-board-pairs .memora-card-side{
+    border-radius:10px;
+  }
+
+  .memora-board-pairs .memora-card-back::before{
+    inset:4px;
+    border-width:1px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.78);
+  }
+
+  .memora-board-pairs .memora-card-back::after{
+    inset:29% 18%;
+  }
+
+  .memora-board-pairs .memora-card-label:not(.text-only),
+  .memora-plus-app.large-cards .memora-board-pairs .memora-card-label:not(.text-only){
+    left:3px;
+    right:3px;
+    bottom:3px;
+    min-height:20px;
+    font-size:10px;
+  }
+}
+
+@media(max-width:380px){
+  .memora-board-pairs{
+    gap:6px;
+  }
+
+  .memora-board-pairs .memora-card-label:not(.text-only),
+  .memora-plus-app.large-cards .memora-board-pairs .memora-card-label:not(.text-only){
+    font-size:9px;
   }
 }

@@ -10,6 +10,7 @@ import {
 const USERS_KEY = 'memoraPlusUsers';
 const SESSION_KEY = 'memoraPlusSession';
 const ENTRY_ANIMATION_KEY = 'memoraPlusEntryAnimation';
+const GUEST_SESSION = { id:'guest', email:'', name:'Invitado', provider:'guest', source:'local' };
 
 function readUsers(){
   try{
@@ -67,6 +68,11 @@ export function getCurrentSession(){
   }catch{
     return null;
   }
+}
+
+export function startGuestSession(){
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ ...GUEST_SESSION, signedAt:Date.now() }));
+  return getCurrentSession();
 }
 
 export async function signOut(){
@@ -177,7 +183,7 @@ function authStatusMessage(error, mode){
     return `${message} Para esta página publicada agrega ${location.hostname} en Firebase Authentication.`;
   }
   if(mode === 'login' && (message.includes('incorrectos') || message.includes('No existe'))){
-    return 'No pudimos ingresar con esos datos. Si aún no creaste cuenta en Memora+, toca Crear cuenta; si quieres usar tu Gmail, toca Continuar con Google.';
+    return 'No pudimos ingresar con esos datos. Si aún no creaste una cuenta, toca Crear cuenta; también puedes comenzar sin cuenta.';
   }
   return message;
 }
@@ -248,6 +254,11 @@ export function initLoginPage(){
   setMode(params.get('mode') === 'register' ? 'register' : 'login');
   renderExistingSession();
   renderFirebaseHint();
+
+  document.getElementById('auth-guest')?.addEventListener('click', () => {
+    startGuestSession();
+    markEntryAnimation();
+  });
 
   document.getElementById('auth-login-tab')?.addEventListener('click', () => setMode('login'));
   document.getElementById('auth-register-tab')?.addEventListener('click', () => setMode('register'));
@@ -321,9 +332,8 @@ export function playEntryAnimation(){
 export function requireSessionForApp(){
   const appHasAccountGate = !!document.getElementById('account-bar');
   if(!appHasAccountGate) return true;
-  if(getCurrentSession()) return true;
-  location.replace('login.html');
-  return false;
+  if(!getCurrentSession()) startGuestSession();
+  return true;
 }
 
 export function initAccountBar(){
@@ -339,11 +349,12 @@ export function initAccountBar(){
       <span class="account-avatar">${getInitials(session.name)}</span>
       <span>
         <strong>${session.name}</strong>
-        <small>${session.provider === 'google' ? 'Google' : 'Cuenta Memora+'}</small>
+        <small>${session.provider === 'guest' ? 'Sin cuenta' : session.provider === 'google' ? 'Google' : 'Cuenta Memora+'}</small>
       </span>
     </button>
     <div class="account-menu" id="account-menu" role="menu" hidden>
-      <button id="account-logout" type="button" role="menuitem">Salir</button>
+      ${session.provider === 'guest' ? '<a href="login.html?mode=register" role="menuitem">Crear cuenta</a>' : ''}
+      <button id="account-logout" type="button" role="menuitem">${session.provider === 'guest' ? 'Salir al acceso' : 'Cerrar sesión'}</button>
     </div>
   ` : `
     <a class="account-link primary" href="login.html">Ingresar</a>

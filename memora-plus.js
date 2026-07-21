@@ -5,17 +5,16 @@ import { loadFirebaseHistory, saveFirebaseHistory, saveFirebaseProgress } from '
 const STORAGE_KEY = 'memoraplusProgress';
 const HISTORY_KEY = 'memoraplusHistory';
 const HISTORY_LIMIT = 50;
-const SPEEDS = {
-  slow:{ preview:12000, sequence:6200, feedback:1400 },
-  normal:{ preview:10000, sequence:4700, feedback:1000 },
-  fast:{ preview:7000, sequence:3400, feedback:760 }
+const ANIMATION_SPEEDS = {
+  normal:{ sequence:4700, feedback:1000, flip:520 },
+  reduced:{ sequence:6200, feedback:1250, flip:0 }
 };
 
 const LEVELS = [
   {
     id:'visual',
-    tag:'Nivel 1',
-    title:'Memoria visual simple',
+    tag:'Actividad 1',
+    title:'Encuentra las parejas',
     prompt:'Encuentra pares iguales.',
     explanation:'Encuentra las parejas iguales. Da vuelta dos cartas por turno y recuerda sus posiciones para completar todos los pares.',
     type:'pairs',
@@ -30,8 +29,8 @@ const LEVELS = [
   },
   {
     id:'semantic',
-    tag:'Nivel 2',
-    title:'Asociación semántica',
+    tag:'Actividad 2',
+    title:'Relaciona objetos',
     prompt:'Une objetos que se relacionan.',
     explanation:'Busca dos cartas que tengan relación entre sí, como objeto y uso, lugar o complemento. No son iguales: están asociadas por significado.',
     type:'pairs',
@@ -46,8 +45,8 @@ const LEVELS = [
   },
   {
     id:'temporal',
-    tag:'Nivel 3',
-    title:'Memoria temporal',
+    tag:'Actividad 3',
+    title:'Recuerda dónde estaba',
     prompt:'Observa las 9 cartas durante 10 segundos. Luego responde dónde estaba la carta que se pide.',
     explanation:'Observa la ubicación de 9 cartas. Después se ocultarán y tendrás que marcar dónde estaba la carta que se muestra en la pregunta.',
     type:'temporal',
@@ -65,23 +64,23 @@ const LEVELS = [
   },
   {
     id:'sequence',
-    tag:'Nivel 4',
-    title:'Secuencias',
+    tag:'Actividad 4',
+    title:'Repite la secuencia',
     prompt:'Mira el orden y reprodúcelo.',
     explanation:'Mira una secuencia de colores, memoriza el orden y luego presiona los colores en la misma secuencia.',
     type:'sequence',
     sequence:['red', 'green', 'blue', 'yellow', 'green'],
     swatches:{
-      red:{ label:'Rojo', color:'#f43f5e' },
-      green:{ label:'Verde', color:'#22c55e' },
-      blue:{ label:'Azul', color:'#3b82f6' },
-      yellow:{ label:'Amarillo', color:'#facc15' }
+      red:{ label:'Rojo, círculo', color:'#f43f5e', symbol:'●' },
+      green:{ label:'Verde, triángulo', color:'#22c55e', symbol:'▲' },
+      blue:{ label:'Azul, estrella', color:'#3b82f6', symbol:'★' },
+      yellow:{ label:'Amarillo, cuadrado', color:'#facc15', symbol:'■' }
     }
   },
   {
     id:'daily',
-    tag:'Nivel 5',
-    title:'Memoria cotidiana chilena',
+    tag:'Actividad 5',
+    title:'Recuerdos cotidianos',
     prompt:'Asocia elementos familiares de la vida diaria.',
     explanation:'Une cartas relacionadas con objetos y situaciones cotidianas. Trabaja reconocimiento, memoria y asociación con elementos familiares.',
     type:'pairs',
@@ -125,11 +124,14 @@ const state = {
   temporalQueue:[],
   temporalTarget:null,
   sequenceInput:[],
+  generatedSequence:[],
   sequenceTimer:null,
   flipInIds:[],
   flipOutIds:[],
   animateGameEntry:false,
   summaryRecorded:false,
+  practiceMode:false,
+  paused:false,
   streak:0,
   guidedResults:[],
   progress:loadProgress()
@@ -298,7 +300,7 @@ async function renderHistoryContent(){
     content.innerHTML = `
       <div class="memora-history-empty">
         <strong>Sin historial todavia</strong>
-        <p>Completa los 5 ejercicios para que se guarde tu primera partida.</p>
+        <p>Completa una sesión de actividades para guardar tu primer registro.</p>
       </div>
     `;
     return;
@@ -310,12 +312,12 @@ async function renderHistoryContent(){
     </section>
 
     <section class="memora-history-section">
-      <h3>Partidas de los 5 ejercicios</h3>
+      <h3>Sesiones de actividades</h3>
       <div class="memora-history-sessions detailed">
         ${history.map((item, index) => `
           <article class="memora-history-session-card">
-            <div class="memora-history-session-head"><div><strong>Partida ${history.length - index}</strong><span>${formatHistoryDate(item.completedAt)}</span></div><p>${item.totals.hits} aciertos - ${item.totals.misses} errores - ${item.totals.accuracy}% precision</p></div>
-            <div class="memora-history-session-levels">${LEVELS.map((levelItem, levelIndex) => { const result = item.levels[levelIndex] || normalizeLevelResult(); return `<div><span>${escapeHTML(levelItem.tag)}</span><strong>${escapeHTML(levelItem.title)}</strong><p>${result.hits} aciertos - ${result.misses} errores - ${result.accuracy}% precision</p></div>`; }).join('')}</div>
+            <div class="memora-history-session-head"><div><strong>Sesión ${history.length - index}</strong><span>${formatHistoryDate(item.completedAt)}</span></div><p>${item.totals.hits} logros · ${item.totals.misses} intentos adicionales</p></div>
+            <div class="memora-history-session-levels">${LEVELS.map((levelItem, levelIndex) => { const result = item.levels[levelIndex] || normalizeLevelResult(); return `<div><span>${escapeHTML(levelItem.tag)}</span><strong>${escapeHTML(levelItem.title)}</strong><p>${result.hits} logros · ${result.misses} intentos adicionales</p></div>`; }).join('')}</div>
           </article>
         `).join('')}
       </div>
@@ -330,7 +332,7 @@ async function renderHistoryContent(){
               <strong>${formatHistoryDate(item.completedAt)}</strong>
               <span>${escapeHTML(item.userName || 'Usuario')}</span>
             </div>
-            <p>${item.totals?.hits || 0} aciertos · ${item.totals?.misses || 0} errores · ${item.totals?.accuracy || 0}% precision</p>
+            <p>${item.totals?.hits || 0} logros · ${item.totals?.misses || 0} intentos adicionales</p>
           </article>
         `).join('')}
       </div>
@@ -364,12 +366,29 @@ function shuffle(items){
 }
 
 function level(){
-  return LEVELS[state.levelIndex] || LEVELS[0];
+  const base = LEVELS[state.levelIndex] || LEVELS[0];
+  const mode = document.getElementById('memora-difficulty')?.value || 'normal';
+  const counts = {
+    gentle:{ pairs:3, temporal:4, sequence:2 },
+    normal:{ pairs:base.id === 'daily' ? 6 : 5, temporal:6, sequence:4 },
+    challenge:{ pairs:base.pairs?.length || 0, temporal:9, sequence:6 }
+  }[mode];
+  if(base.type === 'pairs') return { ...base, pairs:base.pairs.slice(0, counts.pairs) };
+  if(base.type === 'temporal') return { ...base, items:base.items.slice(0, counts.temporal) };
+  if(base.type === 'sequence'){
+    const sequence = state.generatedSequence.length
+      ? state.generatedSequence
+      : Array.from({ length:counts.sequence }, (_, index) => base.sequence[index % base.sequence.length]);
+    return { ...base, sequence };
+  }
+  return base;
 }
 
-function speed(){
-  const key = document.getElementById('memora-speed')?.value || 'normal';
-  return SPEEDS[key] || SPEEDS.normal;
+function timing(){
+  const key = document.getElementById('memora-animation-speed')?.value || 'normal';
+  const animation = ANIMATION_SPEEDS[key] || ANIMATION_SPEEDS.normal;
+  const preview = Number(document.getElementById('memora-observe-time')?.value || 10000);
+  return { ...animation, preview };
 }
 
 function updateSummary(){
@@ -427,6 +446,28 @@ function setAppChromeVisible(visible){
   if(visible) state.animateGameEntry = false;
 }
 
+function speak(message){
+  if(!('speechSynthesis' in window) || !message) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(message);
+  utterance.lang = 'es-CL';
+  utterance.rate = .88;
+  utterance.volume = .9;
+  window.speechSynthesis.speak(utterance);
+}
+
+function announce(message){
+  if(document.getElementById('memora-voice-mode')?.checked) speak(message);
+}
+
+function instructionFor(current = level()){
+  if(current.type === 'pairs') return current.id === 'semantic'
+    ? 'Busca dos objetos que se relacionan. Da vuelta dos cartas por intento y recuerda su ubicación.'
+    : 'Da vuelta dos cartas. Si son iguales, encontraste una pareja. Continúa hasta completar el tablero.';
+  if(current.type === 'temporal') return 'Observa las cartas. Cuando se oculten, elige la posición donde estaba el objeto solicitado.';
+  return 'Observa la secuencia de colores y símbolos. Luego presiónalos en el mismo orden.';
+}
+
 function renderGuide(){
   const guide = document.getElementById('memora-guide');
   if(!guide) return;
@@ -440,11 +481,12 @@ function renderGuide(){
       <div class="memora-guide-copy">
         <span>Programa de ejercicios</span>
         <h1>Comienza tu recorrido Memora+</h1>
-        <p>Realiza 5 niveles de memoria, asociación, memoria temporal, secuencias y vida cotidiana. Al terminar recibirás un resumen de tu sesión.</p>
+        <p>Elige actividades de memoria, asociación, ubicación, secuencias y vida cotidiana. Puedes detenerte cuando quieras.</p>
       </div>
       <button class="memora-guide-primary" id="memora-guide-start" type="button">Empezar ejercicios</button>
     `;
     document.getElementById('memora-guide-start')?.addEventListener('click', () => {
+      state.practiceMode = false;
       state.guidedResults = [];
       state.levelIndex = 0;
       state.summaryRecorded = false;
@@ -469,16 +511,16 @@ function renderGuide(){
         <p>Terminaste los 5 ejercicios. Estos son los resultados de esta sesión.</p>
       </div>
       <div class="memora-final-stats">
-        <div><span>Aciertos</span><strong>${totals.hits}</strong></div>
-        <div><span>Errores</span><strong>${totals.misses}</strong></div>
-        <div><span>Precisión</span><strong>${accuracy}%</strong></div>
+        <div><span>Actividades</span><strong>${state.guidedResults.length}</strong></div>
+        <div><span>Logros</span><strong>${totals.hits}</strong></div>
+        <div><span>Intentos adicionales</span><strong>${totals.misses}</strong></div>
       </div>
       <div class="memora-result-list">
         ${state.guidedResults.map(item => `
           <article>
             <span>${escapeHTML(item.tag)}</span>
             <strong>${escapeHTML(item.title)}</strong>
-            <p>${item.hits} aciertos · ${item.misses} errores · ${item.accuracy}% precisión</p>
+            <p>${item.hits} logros · ${item.misses} intentos adicionales</p>
           </article>
         `).join('')}
       </div>
@@ -510,8 +552,14 @@ function renderGuide(){
       <span>Objetivo</span>
       <strong>${exerciseTotal(current)} respuestas</strong>
     </div>
-    <button class="memora-guide-primary" id="memora-guide-begin" type="button">Comenzar ejercicio</button>
+    <div class="memora-summary-actions">
+      <button class="memora-guide-secondary" id="memora-guide-listen" type="button">🔊 Escuchar instrucciones</button>
+      <button class="memora-guide-secondary" id="memora-guide-practice" type="button">Practicar primero</button>
+      <button class="memora-guide-primary" id="memora-guide-begin" type="button">Comenzar actividad</button>
+    </div>
   `;
+  document.getElementById('memora-guide-listen')?.addEventListener('click', () => speak(instructionFor(current)));
+  document.getElementById('memora-guide-practice')?.addEventListener('click', () => startPractice());
   document.getElementById('memora-guide-begin')?.addEventListener('click', () => transitionToExercise());
 }
 
@@ -553,8 +601,17 @@ function transitionToExercise(){
   window.setTimeout(startExercise, 280);
 }
 
+function startPractice(){
+  state.practiceMode = true;
+  const difficulty = document.getElementById('memora-difficulty');
+  if(difficulty) difficulty.value = 'gentle';
+  startExercise();
+  setText('memora-prompt', `Práctica: ${instructionFor(level())}`);
+  announce(`Comencemos una práctica. ${instructionFor(level())}`);
+}
+
 function returnToLobby(){
-  const wantsReturn = window.confirm('¿Seguro que quieres regresar al lobby? Se borrará todo el avance de este recorrido.');
+  const wantsReturn = window.confirm('¿Seguro que quieres regresar al inicio? Se cerrará la actividad actual.');
   if(!wantsReturn) return;
   returnToLobbyDirect();
 }
@@ -601,6 +658,8 @@ function resetSession(){
   state.sequenceInput = [];
   state.flipInIds = [];
   state.flipOutIds = [];
+  state.generatedSequence = [];
+  state.paused = false;
 }
 
 function buildPairCards(current){
@@ -628,6 +687,15 @@ function renderCardFace(face){
     return `<img class="memora-card-image" src="${escapeHTML(image)}" alt="${escapeHTML(label)}" />`;
   }
   return `<span class="memora-card-label text-only">${escapeHTML(label)}</span>`;
+}
+
+function cardAccessibleLabel(card, index, visible, current){
+  if(card.matched) return `Pareja encontrada: ${faceLabel(card.face)}`;
+  if(visible) return `Carta ${faceLabel(card.face)}, seleccionada`;
+  const columns = current.type === 'temporal' && state.cards.length === 4 ? 2 : current.type === 'temporal' ? 3 : 4;
+  const row = Math.floor(index / columns) + 1;
+  const column = (index % columns) + 1;
+  return `Carta oculta, fila ${row}, columna ${column}`;
 }
 
 function renderPairGuideFace(face){
@@ -673,6 +741,7 @@ function renderPairGuide(current){
 }
 
 function promptForState(current){
+  if(state.paused) return 'Actividad pausada. Puedes continuar cuando quieras.';
   if(state.phase === 'complete') return 'Ejercicio completado. Presiona el boton verde para continuar.';
   if(current.type === 'pairs' && state.phase === 'preview') return 'Observa las cartas. En unos segundos se ocultaran para comenzar.';
   if(current.type === 'temporal'){
@@ -696,7 +765,13 @@ function render(){
   }
 
   setAppChromeVisible(true);
-  document.getElementById('memora-plus-app')?.classList.toggle('large-cards', document.getElementById('memora-large-mode')?.checked !== false);
+  const app = document.getElementById('memora-plus-app');
+  const interfaceSize = document.getElementById('memora-interface-size')?.value || 'large';
+  app?.classList.toggle('large-cards', interfaceSize !== 'normal');
+  app?.classList.toggle('interface-large', interfaceSize === 'large');
+  app?.classList.toggle('interface-xlarge', interfaceSize === 'xlarge');
+  app?.classList.toggle('reduced-animations', document.getElementById('memora-animation-speed')?.value === 'reduced');
+  app?.classList.toggle('companion-mode', document.getElementById('memora-companion-mode')?.checked === true);
   setText('memora-level-tag', current.tag);
   setText('memora-level-title', current.title);
   setText('memora-prompt', promptForState(current));
@@ -712,13 +787,33 @@ function render(){
 function updateActionButtons(){
   const nextButton = document.getElementById('memora-next-level');
   const repeatButton = document.getElementById('memora-repeat');
+  const readyButton = document.getElementById('memora-ready');
+  const pauseButton = document.getElementById('memora-pause');
   if(nextButton){
     nextButton.hidden = state.phase !== 'complete';
-    nextButton.textContent = state.levelIndex >= LEVELS.length - 1 ? 'Ver resumen' : 'Siguiente nivel';
+    nextButton.textContent = state.practiceMode ? 'Terminar práctica' : state.levelIndex >= LEVELS.length - 1 ? 'Ver resumen' : 'Siguiente actividad';
   }
   if(repeatButton){
     repeatButton.hidden = state.phase === 'complete';
   }
+  if(readyButton){
+    const manualFeedback = state.phase === 'feedback';
+    readyButton.hidden = !(manualFeedback || (state.phase === 'preview' && document.getElementById('memora-ready-mode')?.checked));
+    readyButton.textContent = manualFeedback ? 'Entendí, continuar' : 'Ya estoy listo';
+  }
+  if(pauseButton){
+    pauseButton.hidden = !['play','input'].includes(state.phase);
+    pauseButton.textContent = state.paused ? 'Continuar actividad' : 'Pausar';
+    pauseButton.disabled = state.locked && !state.paused;
+  }
+}
+
+function togglePause(){
+  if(!['play','input'].includes(state.phase)) return;
+  if(state.locked && !state.paused) return;
+  state.paused = !state.paused;
+  state.locked = state.paused;
+  render();
 }
 
 function renderBoard(){
@@ -726,7 +821,7 @@ function renderBoard(){
   const sequenceControls = document.getElementById('memora-sequence-controls');
   if(!board || !sequenceControls) return;
   const current = level();
-  board.className = `memora-board memora-board-${current.type}`;
+  board.className = `memora-board memora-board-${current.type} cards-${state.cards.length}`;
   sequenceControls.hidden = current.type !== 'sequence';
   sequenceControls.innerHTML = '';
 
@@ -740,13 +835,13 @@ function renderBoard(){
     return;
   }
 
-  board.innerHTML = state.cards.map(card => {
+  board.innerHTML = state.cards.map((card, cardIndex) => {
     const visible = card.flipped || card.matched || state.phase === 'preview';
     const status = card.matched ? 'matched' : visible ? 'visible' : '';
     const flipIn = state.flipInIds.includes(card.id);
     const flipOut = state.flipOutIds.includes(card.id);
     return `
-      <button class="memora-card ${status} ${flipIn ? 'flip-in' : ''} ${flipOut ? 'flip-out' : ''}" type="button" data-card-id="${escapeHTML(card.id)}" ${card.matched || state.locked ? 'disabled' : ''}>
+      <button class="memora-card ${status} ${flipIn ? 'flip-in' : ''} ${flipOut ? 'flip-out' : ''}" type="button" data-card-id="${escapeHTML(card.id)}" aria-label="${escapeHTML(cardAccessibleLabel(card, cardIndex, visible, current))}" ${card.matched || state.locked ? 'disabled' : ''}>
         <span class="memora-card-inner">
           <span class="memora-card-side memora-card-back" aria-hidden="${visible ? 'true' : 'false'}">
             <span>?</span>
@@ -773,14 +868,14 @@ function renderSequence(board, controls, current){
     <div class="memora-sequence-display">
       ${sequence.map(key => {
         const swatch = current.swatches[key];
-        return `<span class="memora-sequence-dot" style="--dot:${swatch.color}" aria-label="${escapeHTML(swatch.label)}"></span>`;
+        return `<span class="memora-sequence-dot" style="--dot:${swatch.color}" aria-label="${escapeHTML(swatch.label)}"><b>${swatch.symbol}</b></span>`;
       }).join('')}
     </div>
   `;
 
   controls.innerHTML = Object.entries(current.swatches).map(([key, swatch]) => `
     <button class="memora-color-button" type="button" data-sequence-key="${escapeHTML(key)}" style="--dot:${swatch.color}">
-      <span></span>${escapeHTML(swatch.label)}
+      <span>${swatch.symbol}</span>${escapeHTML(swatch.label)}
     </button>
   `).join('');
 
@@ -800,6 +895,13 @@ function unlockAfterFlip(levelId){
 
 function startExercise(){
   resetSession();
+  const base = LEVELS[state.levelIndex] || LEVELS[0];
+  if(base.type === 'sequence'){
+    const mode = document.getElementById('memora-difficulty')?.value || 'normal';
+    const length = mode === 'gentle' ? 2 : mode === 'challenge' ? 6 : 4;
+    const keys = Object.keys(base.swatches);
+    state.generatedSequence = Array.from({ length }, () => keys[Math.floor(Math.random() * keys.length)]);
+  }
   const current = level();
   state.appMode = 'exercise';
   state.phase = 'preview';
@@ -809,12 +911,24 @@ function startExercise(){
       ? buildPairCards(current)
       : [];
   state.temporalQueue = current.type === 'temporal' ? shuffle(state.cards.map(card => card.id)) : [];
-  state.progress.sessions++;
+  if(!state.practiceMode) state.progress.sessions++;
   state.progress.lastLevel = current.title;
   saveProgress();
 
   if(current.type === 'pairs'){
-    setText('memora-prompt', 'Observa las cartas. En unos segundos se ocultaran para comenzar.');
+    const observeFirst = document.getElementById('memora-ready-mode')?.checked;
+    if(!observeFirst){
+      state.phase = 'play';
+      setText('memora-prompt', current.prompt);
+      render();
+      return;
+    }
+    setText('memora-prompt', 'Observa las cartas. Cuando estés listo, ocúltalas para comenzar.');
+    if(observeFirst){
+      updateActionButtons();
+      render();
+      return;
+    }
     state.sequenceTimer = setTimeout(() => {
       if(level().id !== current.id || state.phase !== 'preview') return;
       state.flipOutIds = state.cards.map(card => card.id);
@@ -822,11 +936,15 @@ function startExercise(){
       state.locked = true;
       render();
       unlockAfterFlip(current.id);
-    }, Math.max(3600, Math.round(speed().preview * .55)));
+    }, Math.max(3600, Math.round(timing().preview * .55)));
   }else if(current.type === 'temporal'){
     setTemporalQuestion();
     setText('memora-prompt', 'Observa bien la ubicación de las 9 cartas.');
-    setTimeout(() => {
+    if(document.getElementById('memora-ready-mode')?.checked){
+      render();
+      return;
+    }
+    state.sequenceTimer = setTimeout(() => {
       if(level().id !== current.id || state.phase !== 'preview') return;
       state.cards.forEach(card => card.flipped = false);
       state.flipOutIds = state.cards.map(card => card.id);
@@ -835,15 +953,19 @@ function startExercise(){
       nextTemporalQuestion();
       render();
       unlockAfterFlip(current.id);
-    }, speed().preview);
+    }, timing().preview);
   }else if(current.type === 'sequence'){
     setText('memora-prompt', 'Memoriza el orden de los colores.');
+    if(document.getElementById('memora-ready-mode')?.checked){
+      render();
+      return;
+    }
     state.sequenceTimer = setTimeout(() => {
       if(level().id !== current.id || state.phase !== 'preview') return;
       state.phase = 'input';
       setText('memora-prompt', 'Reproduce la secuencia.');
       render();
-    }, speed().sequence);
+    }, timing().sequence);
   }
 
   render();
@@ -865,7 +987,7 @@ function repeatSample(){
       });
       render();
       unlockAfterFlip(current.id);
-    }, speed().feedback + 600);
+    }, timing().feedback + 600);
     return;
   }
   startExercise();
@@ -900,9 +1022,11 @@ function resolvePair(){
     recordHit();
     state.flipped = [];
     state.locked = false;
+    announce('Muy bien, encontraste una pareja.');
     if(state.matched === level().pairs.length) completeExercise();
   }else{
     recordMiss();
+    announce('No son pareja. Puedes intentarlo nuevamente.');
     setTimeout(() => {
       state.flipOutIds = [first.id, second.id];
       first.flipped = false;
@@ -910,7 +1034,7 @@ function resolvePair(){
       state.flipped = [];
       render();
       unlockAfterFlip(level().id);
-    }, speed().feedback);
+    }, timing().feedback);
   }
 }
 
@@ -935,28 +1059,40 @@ function handleTemporalClick(cardId){
     selected.matched = true;
     state.matched++;
     recordHit();
+    announce('Muy bien, encontraste la posición.');
   }else{
     recordMiss();
+    announce('Esa no era la posición. Observa la respuesta correcta.');
     const target = state.cards.find(card => card.id === state.temporalTarget);
     if(target){
       target.flipped = true;
       state.flipInIds = target.id === selected.id ? [selected.id] : [selected.id, target.id];
     }
   }
+  if(document.getElementById('memora-ready-mode')?.checked){
+    state.phase = 'feedback';
+    render();
+    return;
+  }
   setTimeout(() => {
-    state.flipOutIds = state.cards.filter(card => !card.matched && card.flipped).map(card => card.id);
-    state.cards.forEach(card => {
-      if(!card.matched) card.flipped = false;
-    });
-    state.locked = false;
-    if(state.matched >= level().items.length || !state.temporalQueue.length){
-      completeExercise();
-    }else{
-      nextTemporalQuestion();
-      render();
-    }
-  }, speed().feedback);
+    finishTemporalFeedback();
+  }, timing().feedback);
   render();
+}
+
+function finishTemporalFeedback(){
+  state.flipOutIds = state.cards.filter(card => !card.matched && card.flipped).map(card => card.id);
+  state.cards.forEach(card => {
+    if(!card.matched) card.flipped = false;
+  });
+  state.locked = false;
+  if(state.matched >= level().items.length || !state.temporalQueue.length){
+    completeExercise();
+  }else{
+    state.phase = 'play';
+    nextTemporalQuestion();
+    render();
+  }
 }
 
 function handleSequenceClick(key){
@@ -971,19 +1107,27 @@ function handleSequenceClick(key){
   }else{
     recordMiss();
     state.locked = true;
-    setText('memora-prompt', 'Secuencia distinta. Puedes repetir la muestra.');
+    announce('La secuencia fue distinta. Vamos a observarla nuevamente.');
+    setText('memora-prompt', 'No fue igual. Observa la secuencia nuevamente.');
     setTimeout(() => {
       state.sequenceInput = [];
       state.matched = 0;
       state.locked = false;
+      state.phase = 'preview';
       render();
-    }, speed().feedback);
+      state.sequenceTimer = setTimeout(() => {
+        if(state.phase !== 'preview') return;
+        state.phase = 'input';
+        render();
+      }, timing().sequence);
+    }, timing().feedback);
   }
   render();
 }
 
 function recordHit(){
   state.hits++;
+  if(state.practiceMode) return updateStats();
   state.progress.hits++;
   state.streak++;
   state.progress.bestStreak = Math.max(state.progress.bestStreak, state.streak);
@@ -993,6 +1137,7 @@ function recordHit(){
 
 function recordMiss(){
   state.misses++;
+  if(state.practiceMode) return updateStats();
   state.progress.misses++;
   state.streak = 0;
   saveProgress();
@@ -1002,17 +1147,46 @@ function recordMiss(){
 function completeExercise(){
   const current = level();
   const result = currentExerciseResult(current);
-  state.guidedResults.push(result);
+  if(!state.practiceMode) state.guidedResults.push(result);
   state.phase = 'complete';
   state.locked = false;
   setTemporalQuestion();
   setText('memora-prompt', 'Ejercicio completado. Presiona el botón verde para continuar.');
+  announce(state.practiceMode ? 'Práctica completada.' : 'Actividad completada. Muy bien.');
   saveProgress();
   render();
 }
 
+function continueWhenReady(){
+  if(state.phase === 'feedback'){
+    finishTemporalFeedback();
+    return;
+  }
+  if(state.phase !== 'preview') return;
+  const current = level();
+  if(current.type === 'pairs' || current.type === 'temporal'){
+    state.cards.forEach(card => card.flipped = false);
+    state.flipOutIds = state.cards.map(card => card.id);
+    state.phase = 'play';
+    state.locked = true;
+    if(current.type === 'temporal') nextTemporalQuestion();
+    render();
+    unlockAfterFlip(current.id);
+  }else if(current.type === 'sequence'){
+    state.phase = 'input';
+    state.sequenceInput = [];
+    render();
+  }
+}
+
 function goToNextLevel(){
   if(state.phase !== 'complete') return;
+  if(state.practiceMode){
+    state.practiceMode = false;
+    resetSession();
+    transitionToMode('intro');
+    return;
+  }
   if(state.levelIndex >= LEVELS.length - 1){
     recordCompletedJourney();
     transitionToMode('summary');
@@ -1042,8 +1216,25 @@ export function initMemoraPlus(){
   document.getElementById('memora-back-lobby')?.addEventListener('click', returnToLobby);
   document.getElementById('memora-repeat')?.addEventListener('click', repeatSample);
   document.getElementById('memora-next-level')?.addEventListener('click', goToNextLevel);
-  document.getElementById('memora-large-mode')?.addEventListener('change', render);
-  document.getElementById('memora-speed')?.addEventListener('change', () => {
+  document.getElementById('memora-ready')?.addEventListener('click', continueWhenReady);
+  document.getElementById('memora-listen')?.addEventListener('click', () => speak(instructionFor()));
+  document.getElementById('memora-help')?.addEventListener('click', () => {
+    const companion = document.getElementById('memora-companion-mode')?.checked
+      ? 'Acompañante: lea la instrucción con calma, permita que la persona responda sin apuro y evite indicar la respuesta.'
+      : '';
+    const message = `${instructionFor()} Puedes usar “Practicar primero” para ensayar con menos elementos. También puedes regresar a Inicio sin perder el progreso ya guardado. ${companion}`;
+    window.alert(message);
+  });
+  document.getElementById('memora-practice')?.addEventListener('click', startPractice);
+  document.getElementById('memora-pause')?.addEventListener('click', togglePause);
+  document.getElementById('memora-interface-size')?.addEventListener('change', render);
+  document.getElementById('memora-animation-speed')?.addEventListener('change', render);
+  document.getElementById('memora-companion-mode')?.addEventListener('change', render);
+  document.getElementById('memora-difficulty')?.addEventListener('change', () => {
+    if(state.appMode === 'exercise') startExercise();
+    else render();
+  });
+  document.getElementById('memora-observe-time')?.addEventListener('change', () => {
     if(state.phase === 'idle' || state.phase === 'complete') render();
   });
   document.getElementById('memora-reset-progress')?.addEventListener('click', () => {

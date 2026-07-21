@@ -11,11 +11,11 @@
   <title>Memora+</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" href="assets/logo-memora-plus.png" />
-  <link rel="stylesheet" href="style.css?v=44" />
+  <link rel="stylesheet" href="style.css?v=47" />
 </head>
 <body>
   <div class="top-lobby" id="lobby-bar" hidden>
-    <button class="lobby-pill" id="memora-back-lobby" type="button">Regresar al lobby</button>
+    <button class="lobby-pill" id="memora-back-lobby" type="button">Regresar al inicio</button>
   </div>
   <div class="top-account" id="account-bar" aria-label="Cuenta"></div>
   <div class="memora-history-modal" id="memora-history-modal" role="dialog" aria-modal="true" aria-labelledby="memora-history-title" hidden>
@@ -39,22 +39,24 @@
           <section class="memora-activity-panel" aria-live="polite">
             <div class="memora-activity-top">
               <div>
-                <span id="memora-level-tag">Nivel 1</span>
-                <h2 id="memora-level-title">Memoria visual simple</h2>
+                <span id="memora-level-tag">Actividad 1</span>
+                <h2 id="memora-level-title">Encuentra las parejas</h2>
               </div>
               <div class="memora-access-controls" aria-label="Ajustes de accesibilidad">
                 <label>
-                  Velocidad
-                  <select id="memora-speed">
-                    <option value="slow">Pausada</option>
-                    <option value="normal" selected>Normal</option>
-                    <option value="fast">Rápida</option>
+                  Tiempo para observar
+                  <select id="memora-observe-time">
+                    <option value="7000">7 segundos</option>
+                    <option value="10000" selected>10 segundos</option>
+                    <option value="15000">15 segundos</option>
                   </select>
                 </label>
-                <label class="memora-toggle">
-                  <input id="memora-large-mode" type="checkbox" checked />
-                  <span>Cartas grandes</span>
-                </label>
+                <label>Animaciones<select id="memora-animation-speed"><option value="normal">Normal</option><option value="reduced">Reducida</option></select></label>
+                <label>Tamaño de pantalla<select id="memora-interface-size"><option value="normal">Normal</option><option value="large" selected>Grande</option><option value="xlarge">Muy grande</option></select></label>
+                <label>Dificultad<select id="memora-difficulty"><option value="gentle">Suave</option><option value="normal" selected>Normal</option><option value="challenge">Desafío</option></select></label>
+                <label class="memora-toggle"><input id="memora-ready-mode" type="checkbox" /><span>Continuar cuando esté listo</span></label>
+                <label class="memora-toggle"><input id="memora-voice-mode" type="checkbox" /><span>Mensajes hablados</span></label>
+                <label class="memora-toggle"><input id="memora-companion-mode" type="checkbox" /><span>Modo acompañante</span></label>
               </div>
             </div>
 
@@ -69,14 +71,19 @@
               </div>
               <aside class="memora-side-panel" aria-label="Seguimiento del ejercicio">
                 <div class="memora-session-strip">
-                  <div><span>Aciertos</span><strong id="memora-hits">0</strong></div>
-                  <div><span>Errores</span><strong id="memora-misses">0</strong></div>
-                  <div><span>Progreso</span><strong id="memora-progress">0/0</strong></div>
+                  <div><span>Logros</span><strong id="memora-hits">0</strong></div>
+                  <div><span>Intentos adicionales</span><strong id="memora-misses">0</strong></div>
+                  <div><span>Avance</span><strong id="memora-progress">0/0</strong></div>
                 </div>
               </aside>
             </div>
 
             <div class="memora-action-row">
+              <button class="memora-secondary-button" id="memora-listen" type="button">🔊 Escuchar instrucciones</button>
+              <button class="memora-secondary-button" id="memora-help" type="button">Necesito ayuda</button>
+              <button class="memora-secondary-button" id="memora-practice" type="button">Practicar primero</button>
+              <button class="memora-secondary-button" id="memora-pause" type="button">Pausar</button>
+              <button class="memora-primary-button" id="memora-ready" type="button" hidden>Ya estoy listo</button>
               <button class="memora-primary-button" id="memora-start" type="button" hidden>Iniciar ejercicio</button>
               <button class="memora-secondary-button" id="memora-repeat" type="button">Repetir muestra</button>
               <button class="memora-next-button" id="memora-next-level" type="button" hidden>Siguiente nivel</button>
@@ -88,6 +95,6 @@
     </section>
   </main>
 
-  <script type="module" src="main.js?v=44"></script>
+  <script type="module" src="main.js?v=45"></script>
 </body>
 </html>
