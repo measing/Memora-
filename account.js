@@ -227,9 +227,11 @@ function renderExistingSession(){
   const session = getCurrentSession();
   const panel = document.getElementById('auth-session-panel');
   const form = document.getElementById('auth-form');
+  const guestButton = document.getElementById('auth-guest');
   if(!panel || !form) return;
   panel.hidden = !session;
   form.hidden = !!session;
+  if(guestButton) guestButton.hidden = !!session && session.provider !== 'guest';
   if(!session) return;
   const avatar = document.getElementById('auth-session-avatar');
   const name = document.getElementById('auth-session-name');
@@ -343,8 +345,11 @@ export function initAccountBar(){
   if(session?.source === 'firebase'){
     saveFirebaseUserSession(session).catch(() => {});
   }
+  const historyButton = session && session.provider !== 'guest'
+    ? '<button class="account-history-pill" id="account-history-button" type="button">Historial</button>'
+    : '';
   bar.innerHTML = session ? `
-    <button class="account-history-pill" id="account-history-button" type="button">Historial</button>
+    ${historyButton}
     <button class="account-pill account-profile-button" id="account-profile-button" type="button" aria-haspopup="menu" aria-expanded="false">
       <span class="account-avatar">${getInitials(session.name)}</span>
       <span>

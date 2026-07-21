@@ -2379,7 +2379,7 @@ body[data-auth-mode="register"] .auth-tabs::before{
   }
 
   .auth-shell{
-    padding:10px;
+    padding:86px 10px 10px;
   }
 
   .auth-card{
@@ -2390,6 +2390,20 @@ body[data-auth-mode="register"] .auth-tabs::before{
 
   .auth-logo{
     height:104px;
+  }
+
+  .auth-guest-floating{
+    top:10px;
+    right:10px;
+    left:10px;
+    min-height:58px;
+    padding:9px 16px;
+  }
+
+  .memora-welcome-actions{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr;
   }
 }
 
@@ -2512,6 +2526,73 @@ body[data-auth-mode="register"] .auth-tabs::before{
   font-size:20px;
   font-weight:900;
   text-decoration:none;
+}
+
+.auth-guest-floating{
+  position:fixed;
+  top:22px;
+  right:22px;
+  z-index:4;
+  min-height:58px;
+  display:grid;
+  align-content:center;
+  justify-items:center;
+  gap:3px;
+  border:1px solid rgba(255,255,255,.34);
+  border-radius:999px;
+  background:rgba(255,255,255,.92);
+  color:var(--primary-dark);
+  padding:10px 20px;
+  box-shadow:0 16px 34px rgba(0,0,0,.16);
+}
+
+.auth-guest-floating span{
+  font-size:15px;
+  line-height:1.05;
+}
+
+.auth-guest-floating small{
+  color:var(--muted);
+  font-size:11px;
+  font-weight:900;
+  line-height:1.1;
+}
+
+.auth-card .auth-guest-note{
+  display:none;
+}
+
+.memora-welcome-actions{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+#memora-guide-listen,
+#memora-guide-practice{
+  display:none!important;
+}
+
+@media(max-width:640px){
+  .auth-shell{
+    padding:86px 10px 10px;
+  }
+
+  .auth-guest-floating{
+    top:10px;
+    right:10px;
+    left:10px;
+    min-height:58px;
+    padding:9px 16px;
+  }
+
+  .memora-welcome-actions{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr;
+  }
 }
 
 .auth-guest-note{

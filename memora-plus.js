@@ -166,6 +166,7 @@ function historyStorageKey(){
 }
 
 function loadHistory(){
+  if(getCurrentSession()?.provider === 'guest') return [];
   try{
     const history = JSON.parse(localStorage.getItem(historyStorageKey()) || '[]');
     return normalizeHistory(history);
@@ -175,9 +176,10 @@ function loadHistory(){
 }
 
 function saveHistory(history){
+  const session = getCurrentSession();
+  if(session?.provider === 'guest') return;
   const cleanHistory = normalizeHistory(history);
   localStorage.setItem(historyStorageKey(), JSON.stringify(cleanHistory));
-  const session = getCurrentSession();
   if(session?.source === 'firebase'){
     saveFirebaseHistory(session, cleanHistory).catch(() => {});
   }
@@ -483,7 +485,10 @@ function renderGuide(){
         <h1>Comienza tu recorrido Memora+</h1>
         <p>Elige actividades de memoria, asociación, ubicación, secuencias y vida cotidiana. Puedes detenerte cuando quieras.</p>
       </div>
-      <button class="memora-guide-primary" id="memora-guide-start" type="button">Empezar ejercicios</button>
+      <div class="memora-welcome-actions">
+        <button class="memora-guide-primary" id="memora-guide-start" type="button">Empezar ejercicios</button>
+        <button class="memora-guide-secondary" id="memora-welcome-practice" type="button">Practicar primero</button>
+      </div>
     `;
     document.getElementById('memora-guide-start')?.addEventListener('click', () => {
       state.practiceMode = false;
@@ -492,6 +497,13 @@ function renderGuide(){
       state.summaryRecorded = false;
       resetSession();
       transitionToMode('intro');
+    });
+    document.getElementById('memora-welcome-practice')?.addEventListener('click', () => {
+      state.guidedResults = [];
+      state.levelIndex = 0;
+      state.summaryRecorded = false;
+      resetSession();
+      startPractice();
     });
     return;
   }
@@ -553,13 +565,9 @@ function renderGuide(){
       <strong>${exerciseTotal(current)} respuestas</strong>
     </div>
     <div class="memora-summary-actions">
-      <button class="memora-guide-secondary" id="memora-guide-listen" type="button">🔊 Escuchar instrucciones</button>
-      <button class="memora-guide-secondary" id="memora-guide-practice" type="button">Practicar primero</button>
       <button class="memora-guide-primary" id="memora-guide-begin" type="button">Comenzar actividad</button>
     </div>
   `;
-  document.getElementById('memora-guide-listen')?.addEventListener('click', () => speak(instructionFor(current)));
-  document.getElementById('memora-guide-practice')?.addEventListener('click', () => startPractice());
   document.getElementById('memora-guide-begin')?.addEventListener('click', () => transitionToExercise());
 }
 
