@@ -524,30 +524,114 @@ function guideSpeechFor(current = level()){
 
 function tutorialVideoFor(current = level()){
   const videos = {
-    visual:'assets/tutorials/activity-1.mp4',
-    semantic:'assets/tutorials/activity-2.mp4',
-    temporal:'assets/tutorials/activity-3.mp4',
-    sequence:'assets/tutorials/activity-4.mp4',
-    daily:'assets/tutorials/activity-5.mp4'
+    visual:'assets/tutorials/activity-1-v2.mp4',
+    semantic:'assets/tutorials/activity-2-v2.mp4',
+    temporal:'assets/tutorials/activity-3-v2.mp4',
+    sequence:'assets/tutorials/activity-4-v2.mp4',
+    daily:'assets/tutorials/activity-5-v2.mp4'
   };
   return videos[current.id] || '';
 }
 
 function tutorialLayoutFor(current = level()){
   const layouts = {
-    visual:{ side:'right', position:'42% center' },
-    semantic:{ side:'right', position:'43% center' },
-    temporal:{ side:'right', position:'46% center' },
-    sequence:{ side:'right', position:'44% center' },
-    daily:{ side:'right', position:'43% center' }
+    visual:{ side:'left', position:'center center' },
+    semantic:{ side:'left', position:'center center' },
+    temporal:{ side:'left', position:'center center' },
+    sequence:{ side:'left', position:'center center' },
+    daily:{ side:'left', position:'center center' }
   };
-  return layouts[current.id] || { side:'right', position:'center center' };
+  return layouts[current.id] || { side:'left', position:'center center' };
 }
 
 function pauseGuideMedia(){
   document.querySelectorAll('#memora-guide video').forEach(video => {
     video.pause();
   });
+}
+
+function revealGuideStart(){
+  const begin = document.getElementById('memora-guide-begin');
+  const skip = document.getElementById('memora-guide-skip');
+  const panel = document.querySelector('.memora-dialog-panel');
+  if(begin){
+    begin.hidden = false;
+    begin.disabled = false;
+  }
+  if(skip){
+    skip.hidden = true;
+  }
+  panel?.classList.add('memora-video-ready');
+}
+
+function settleGuideVideoAtEnd(){
+  document.querySelectorAll('#memora-guide video').forEach(video => {
+    const settle = () => {
+      if(Number.isFinite(video.duration) && video.duration > .2){
+        video.currentTime = Math.max(0, video.duration - .08);
+      }
+      video.pause();
+    };
+    if(video.readyState >= 1){
+      settle();
+    }else{
+      video.addEventListener('loadedmetadata', settle, { once:true });
+    }
+  });
+  revealGuideStart();
+}
+
+function setupGuideVideoIntro(){
+  const guide = document.getElementById('memora-guide');
+  const mainVideo = document.querySelector('#memora-guide .memora-activity-video');
+  const backdropVideo = document.querySelector('#memora-guide .memora-activity-video-backdrop');
+  const begin = document.getElementById('memora-guide-begin');
+  const skip = document.getElementById('memora-guide-skip');
+  const audio = document.getElementById('memora-guide-audio');
+  if(begin){
+    begin.hidden = true;
+    begin.disabled = true;
+  }
+  if(mainVideo){
+    const syncAspect = () => {
+      if(mainVideo.videoWidth && mainVideo.videoHeight){
+        guide?.style.setProperty('--lesson-video-ratio', String(mainVideo.videoWidth / mainVideo.videoHeight));
+        guide?.style.setProperty('--lesson-video-aspect', `${mainVideo.videoWidth} / ${mainVideo.videoHeight}`);
+      }
+    };
+    syncAspect();
+    mainVideo.addEventListener('loadedmetadata', syncAspect, { once:true });
+    mainVideo.muted = false;
+    mainVideo.volume = 1;
+    mainVideo.pause();
+    mainVideo.addEventListener('ended', revealGuideStart, { once:true });
+  }
+  backdropVideo?.pause();
+  audio?.addEventListener('click', () => {
+    if(mainVideo){
+      const restart = () => {
+        mainVideo.currentTime = 0;
+        if(backdropVideo){
+          backdropVideo.currentTime = 0;
+        }
+      };
+      if(mainVideo.readyState >= 1){
+        restart();
+      }else{
+        mainVideo.addEventListener('loadedmetadata', restart, { once:true });
+      }
+      mainVideo.muted = false;
+      mainVideo.volume = 1;
+      backdropVideo?.play?.().catch?.(() => {});
+      mainVideo.play().then(() => {
+        audio.hidden = true;
+      }).catch(() => {
+        audio.hidden = false;
+        audio.textContent = 'Reproducir video';
+      });
+    }
+  });
+  skip?.addEventListener('click', settleGuideVideoAtEnd);
 }
 
 function difficultyOptions(){
@@ -673,7 +757,8 @@ function renderGuide(){
     <div class="memora-lesson-window">
       <section class="memora-video-panel" aria-label="Animación del ejercicio">
         <span>Animación explicativa</span>
-        <video class="memora-activity-video" src="${escapeHTML(tutorialVideo)}" controls autoplay muted playsinline preload="metadata"></video>
+        <video class="memora-activity-video-backdrop" src="${escapeHTML(tutorialVideo)}" muted playsinline preload="metadata" aria-hidden="true"></video>
+        <video class="memora-activity-video" src="${escapeHTML(tutorialVideo)}" playsinline preload="metadata"></video>
       </section>
       <aside class="memora-dialog-panel" aria-label="Explicación del ejercicio">
         <span>${escapeHTML(exerciseLabel)}</span>
@@ -689,11 +774,16 @@ function renderGuide(){
           <span>Objetivo</span>
           <strong>${exerciseTotal(current)} respuestas</strong>
         </div>
-        <button class="memora-guide-primary" id="memora-guide-begin" type="button">Comenzar ejercicio</button>
+        <div class="memora-intro-actions">
+          <button class="memora-guide-secondary memora-audio-video" id="memora-guide-audio" type="button">Activar audio</button>
+          <button class="memora-guide-secondary memora-skip-video" id="memora-guide-skip" type="button">Omitir video</button>
+          <button class="memora-guide-primary" id="memora-guide-begin" type="button" hidden>Comenzar ejercicio</button>
+        </div>
       </aside>
     </div>
   `;
   document.getElementById('memora-guide-begin')?.addEventListener('click', () => transitionToExercise());
+  setupGuideVideoIntro();
   announce(`${exerciseLabel}. ${current.title}. ${current.explanation} ${rulesFor(current).join(' ')}`);
 }
 
