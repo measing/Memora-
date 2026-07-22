@@ -210,16 +210,43 @@ button{
 }
 
 .memora-guide-lesson{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
   align-content:center;
   grid-template-columns:1fr;
   gap:clamp(18px,3vw,28px);
+  min-height:calc(var(--app-height) - clamp(104px,13vh,124px));
+  padding:clamp(22px,4vw,52px);
+  background:#0f2924;
+}
+
+.memora-guide-lesson::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg, rgba(8,24,21,.76), rgba(8,24,21,.22) 45%, rgba(8,24,21,.64)),
+    linear-gradient(180deg, rgba(8,24,21,.66), rgba(8,24,21,.08) 42%, rgba(8,24,21,.72));
 }
 
 .memora-lesson-header{
+  position:absolute;
+  z-index:2;
+  left:clamp(18px,4vw,52px);
+  top:clamp(18px,4vw,52px);
   display:grid;
   justify-items:start;
   gap:8px;
-  width:100%;
+  width:min(620px,54%);
+  padding:18px 20px;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:8px;
+  background:rgba(247,251,249,.86);
+  backdrop-filter:blur(10px);
+  box-shadow:0 18px 42px rgba(0,0,0,.22);
 }
 
 .memora-lesson-header span{
@@ -237,48 +264,56 @@ button{
 }
 
 .memora-lesson-window{
-  display:grid;
-  grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);
-  gap:clamp(18px,3vw,28px);
-  align-items:stretch;
-  width:100%;
+  position:absolute;
+  inset:0;
+  z-index:0;
 }
 
 .memora-video-panel{
-  display:grid;
-  gap:10px;
-  align-self:stretch;
+  position:absolute;
+  inset:0;
 }
 
 .memora-video-panel span{
-  color:var(--accent);
-  font-size:13px;
-  font-weight:900;
-  text-transform:uppercase;
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  white-space:nowrap;
 }
 
 .memora-activity-video{
   width:100%;
-  height:auto;
+  height:100%;
   min-height:0;
-  max-height:min(52vh,520px);
-  aspect-ratio:16 / 9;
-  object-fit:contain;
-  border:1px solid rgba(31,119,104,.22);
+  max-height:none;
+  aspect-ratio:auto;
+  object-fit:cover;
+  border:0;
   border-radius:8px;
-  background:#ffffff;
-  box-shadow:0 18px 32px rgba(23,51,44,.14);
+  background:#0f2924;
+  box-shadow:none;
 }
 
 .memora-dialog-panel{
+  position:absolute;
+  z-index:2;
+  right:clamp(18px,4vw,52px);
+  top:50%;
+  width:min(420px,34vw);
+  max-height:calc(100% - 190px);
+  overflow:auto;
+  transform:translateY(-50%);
   display:grid;
   align-content:start;
   gap:16px;
   padding:clamp(18px,2.4vw,26px);
-  border:1px solid rgba(31,119,104,.22);
+  border:1px solid rgba(255,255,255,.28);
   border-radius:8px;
-  background:#f7fbf9;
-  box-shadow:0 18px 32px rgba(23,51,44,.10);
+  background:rgba(247,251,249,.88);
+  backdrop-filter:blur(12px);
+  box-shadow:0 22px 44px rgba(0,0,0,.24);
 }
 
 .memora-dialog-panel > span{
@@ -331,7 +366,11 @@ button{
 }
 
 .memora-lesson-actions{
-  justify-content:flex-end;
+  position:absolute;
+  z-index:2;
+  left:clamp(18px,4vw,52px);
+  bottom:clamp(18px,4vw,52px);
+  justify-content:flex-start;
 }
 
 .memora-lesson-actions .memora-guide-primary{
@@ -2136,23 +2175,43 @@ body[data-auth-mode="register"] .auth-tabs::before{
   }
 
   .memora-lesson-header{
+    left:10px;
+    right:10px;
+    top:74px;
     text-align:center;
     justify-items:center;
+    width:auto;
+    padding:14px;
   }
 
   .memora-lesson-window{
-    grid-template-columns:1fr;
+    position:absolute;
+    inset:0;
   }
 
   .memora-dialog-panel{
+    position:absolute;
+    left:10px;
+    right:10px;
+    top:auto;
+    bottom:96px;
+    width:auto;
+    max-height:42vh;
+    transform:none;
+    z-index:2;
     padding:16px;
   }
 
   .memora-activity-video{
+    height:100%;
     max-height:none;
+    object-fit:cover;
   }
 
   .memora-lesson-actions{
+    left:10px;
+    right:10px;
+    bottom:18px;
     justify-content:stretch;
   }
 
