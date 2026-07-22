@@ -533,6 +533,17 @@ function tutorialVideoFor(current = level()){
   return videos[current.id] || '';
 }
 
+function tutorialLayoutFor(current = level()){
+  const layouts = {
+    visual:{ side:'right', position:'42% center' },
+    semantic:{ side:'right', position:'43% center' },
+    temporal:{ side:'right', position:'46% center' },
+    sequence:{ side:'right', position:'44% center' },
+    daily:{ side:'right', position:'43% center' }
+  };
+  return layouts[current.id] || { side:'right', position:'center center' };
+}
+
 function pauseGuideMedia(){
   document.querySelectorAll('#memora-guide video').forEach(video => {
     video.pause();
@@ -654,21 +665,20 @@ function renderGuide(){
 
   const current = level();
   const tutorialVideo = tutorialVideoFor(current);
+  const tutorialLayout = tutorialLayoutFor(current);
   const exerciseLabel = `Ejercicio ${state.levelIndex + 1}`;
-  guide.className = 'memora-guide memora-guide-level memora-guide-lesson';
+  guide.className = `memora-guide memora-guide-level memora-guide-lesson lesson-card-${tutorialLayout.side}`;
+  guide.style.setProperty('--lesson-video-position', tutorialLayout.position);
   guide.innerHTML = `
-    <div class="memora-lesson-header">
-      <span>${escapeHTML(exerciseLabel)}</span>
-      <h1>${escapeHTML(current.title)}</h1>
-    </div>
     <div class="memora-lesson-window">
       <section class="memora-video-panel" aria-label="Animación del ejercicio">
         <span>Animación explicativa</span>
         <video class="memora-activity-video" src="${escapeHTML(tutorialVideo)}" controls autoplay muted playsinline preload="metadata"></video>
       </section>
       <aside class="memora-dialog-panel" aria-label="Explicación del ejercicio">
-        <span>${escapeHTML(exerciseLabel)}: ${escapeHTML(current.title)}</span>
-        <p class="memora-dialog-quote">&ldquo;${escapeHTML(current.explanation)}&rdquo;</p>
+        <span>${escapeHTML(exerciseLabel)}</span>
+        <h1>${escapeHTML(current.title)}</h1>
+        <p class="memora-dialog-quote">${escapeHTML(current.explanation)}</p>
         <div class="memora-dialog-rules">
           <strong>Reglas</strong>
           <ol>
@@ -679,10 +689,8 @@ function renderGuide(){
           <span>Objetivo</span>
           <strong>${exerciseTotal(current)} respuestas</strong>
         </div>
+        <button class="memora-guide-primary" id="memora-guide-begin" type="button">Comenzar ejercicio</button>
       </aside>
-    </div>
-    <div class="memora-summary-actions memora-lesson-actions">
-      <button class="memora-guide-primary" id="memora-guide-begin" type="button">Comenzar ejercicio</button>
     </div>
   `;
   document.getElementById('memora-guide-begin')?.addEventListener('click', () => transitionToExercise());

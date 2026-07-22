@@ -268,14 +268,18 @@ button{
 }
 
 .memora-guide-lesson{
-  position:relative;
+  position:fixed;
+  inset:0;
+  z-index:18;
   isolation:isolate;
+  display:block;
+  width:100vw;
+  min-height:100vh;
+  min-height:var(--app-height);
+  padding:0;
   overflow:hidden;
-  align-content:center;
-  grid-template-columns:1fr;
-  gap:clamp(18px,3vw,28px);
-  min-height:calc(var(--app-height) - clamp(104px,13vh,124px));
-  padding:clamp(22px,4vw,52px);
+  border:0;
+  border-radius:0;
   background:#0f2924;
 }
 
@@ -285,40 +289,11 @@ button{
   inset:0;
   z-index:1;
   pointer-events:none;
-  background:
-    linear-gradient(90deg, rgba(8,24,21,.76), rgba(8,24,21,.22) 45%, rgba(8,24,21,.64)),
-    linear-gradient(180deg, rgba(8,24,21,.66), rgba(8,24,21,.08) 42%, rgba(8,24,21,.72));
+  background:linear-gradient(90deg, rgba(8,24,21,0) 0 46%, rgba(8,24,21,.24) 66%, rgba(8,24,21,.62) 100%);
 }
 
-.memora-lesson-header{
-  position:absolute;
-  z-index:2;
-  left:clamp(18px,4vw,52px);
-  top:clamp(18px,4vw,52px);
-  display:grid;
-  justify-items:start;
-  gap:8px;
-  width:min(620px,54%);
-  padding:18px 20px;
-  border:1px solid rgba(255,255,255,.22);
-  border-radius:8px;
-  background:rgba(247,251,249,.86);
-  backdrop-filter:blur(10px);
-  box-shadow:0 18px 42px rgba(0,0,0,.22);
-}
-
-.memora-lesson-header span{
-  color:var(--accent);
-  font-size:14px;
-  font-weight:900;
-  text-transform:uppercase;
-}
-
-.memora-lesson-header h1{
-  color:var(--primary-dark);
-  font-size:clamp(42px,6vw,72px);
-  line-height:.98;
-  font-weight:900;
+.memora-guide-lesson.lesson-card-left::after{
+  background:linear-gradient(90deg, rgba(8,24,21,.62) 0%, rgba(8,24,21,.24) 34%, rgba(8,24,21,0) 54% 100%);
 }
 
 .memora-lesson-window{
@@ -348,56 +323,78 @@ button{
   max-height:none;
   aspect-ratio:auto;
   object-fit:cover;
+  object-position:var(--lesson-video-position, center center);
   border:0;
-  border-radius:8px;
+  border-radius:0;
   background:#0f2924;
   box-shadow:none;
 }
 
 .memora-dialog-panel{
   position:absolute;
-  z-index:2;
-  right:clamp(18px,4vw,52px);
+  z-index:3;
   top:50%;
-  width:min(420px,34vw);
-  max-height:calc(100% - 190px);
+  width:min(430px, calc(100vw - 48px));
+  max-width:430px;
+  max-height:calc(100vh - 72px);
+  max-height:calc(var(--app-height) - 72px);
   overflow:auto;
   transform:translateY(-50%);
   display:grid;
   align-content:start;
-  gap:16px;
-  padding:clamp(18px,2.4vw,26px);
-  border:1px solid rgba(255,255,255,.28);
+  gap:14px;
+  padding:clamp(18px,2.2vw,28px);
+  border:1px solid rgba(255,255,255,.2);
   border-radius:8px;
-  background:rgba(247,251,249,.88);
-  backdrop-filter:blur(12px);
-  box-shadow:0 22px 44px rgba(0,0,0,.24);
+  color:#f7fbf9;
+  background:rgba(8,28,24,.78);
+  backdrop-filter:blur(14px);
+  box-shadow:0 24px 54px rgba(0,0,0,.34);
+  scrollbar-width:thin;
+}
+
+.lesson-card-right .memora-dialog-panel{
+  right:clamp(20px,5vw,72px);
+}
+
+.lesson-card-left .memora-dialog-panel{
+  left:clamp(20px,5vw,72px);
 }
 
 .memora-dialog-panel > span{
-  color:var(--accent);
+  color:#ffd975;
   font-size:13px;
   font-weight:900;
   text-transform:uppercase;
 }
 
-.memora-dialog-quote{
-  padding-left:18px;
-  border-left:4px solid var(--primary);
-  color:var(--primary-dark);
-  font-size:clamp(18px,2.2vw,23px);
-  line-height:1.35;
+.memora-dialog-panel h1{
+  color:#fffaf0;
+  font-size:clamp(34px,4.5vw,54px);
+  line-height:1;
   font-weight:900;
+}
+
+.memora-dialog-quote{
+  margin:0;
+  padding:14px 16px;
+  border-left:4px solid #ffd975;
+  border-radius:8px;
+  color:#f0f8f5;
+  background:rgba(255,255,255,.08);
+  font-size:clamp(17px,1.7vw,21px);
+  line-height:1.4;
+  font-weight:800;
 }
 
 .memora-dialog-rules{
   display:grid;
-  gap:10px;
+  gap:8px;
 }
 
 .memora-dialog-rules strong{
-  color:var(--primary-dark);
-  font-size:18px;
+  color:#fffaf0;
+  font-size:20px;
   font-weight:900;
 }
 
@@ -408,19 +405,28 @@ button{
 }
 
 .memora-dialog-rules li{
-  color:#38504a;
+  color:#e4f0ec;
   font-size:16px;
-  line-height:1.35;
+  line-height:1.4;
   font-weight:800;
 }
 
 .memora-dialog-rules li::marker{
-  color:var(--primary);
+  color:#ffd975;
   font-weight:900;
 }
 
 .memora-dialog-panel .memora-level-preview{
-  margin-top:4px;
+  margin-top:2px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(20,67,57,.92);
+}
+
+.memora-dialog-panel .memora-guide-primary{
+  width:100%;
+  min-height:58px;
+  margin-top:2px;
+  font-size:18px;
 }
 
 .memora-lesson-actions{
@@ -2273,50 +2279,54 @@ body[data-auth-mode="register"] .auth-tabs::before{
     text-align:center;
   }
 
-  .memora-lesson-header{
-    left:10px;
-    right:10px;
-    top:74px;
-    text-align:center;
-    justify-items:center;
-    width:auto;
-    padding:14px;
-  }
-
   .memora-lesson-window{
     position:absolute;
     inset:0;
   }
 
+  .memora-guide-lesson{
+    min-height:100vh;
+    min-height:var(--app-height);
+    overflow:hidden;
+  }
+
+  .memora-guide-lesson::after,
+  .memora-guide-lesson.lesson-card-left::after{
+    background:linear-gradient(180deg, rgba(8,24,21,0) 0 42%, rgba(8,24,21,.2) 58%, rgba(8,24,21,.7) 100%);
+  }
+
   .memora-dialog-panel{
     position:absolute;
-    left:10px;
-    right:10px;
+    left:12px;
+    right:12px;
     top:auto;
-    bottom:96px;
+    bottom:max(14px, env(safe-area-inset-bottom));
     width:auto;
-    max-height:42vh;
+    max-width:none;
+    max-height:min(58vh, calc(var(--app-height) - 112px));
     transform:none;
-    z-index:2;
+    z-index:3;
+    gap:10px;
     padding:16px;
+  }
+
+  .memora-dialog-panel h1{
+    font-size:clamp(28px,9vw,40px);
+  }
+
+  .memora-dialog-quote{
+    font-size:16px;
+  }
+
+  .memora-dialog-rules li{
+    font-size:15px;
   }
 
   .memora-activity-video{
     height:100%;
     max-height:none;
     object-fit:cover;
-  }
-
-  .memora-lesson-actions{
-    left:10px;
-    right:10px;
-    bottom:18px;
-    justify-content:stretch;
-  }
-
-  .memora-lesson-actions .memora-guide-primary{
-    width:100%;
-    min-width:0;
+    object-position:var(--lesson-video-position, center center);
   }
 
   .top-lobby{
