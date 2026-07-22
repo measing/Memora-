@@ -272,6 +272,31 @@ button{
   transform:rotate(45deg);
 }
 
+.memora-video-panel{
+  display:grid;
+  gap:10px;
+  align-self:stretch;
+}
+
+.memora-video-panel span{
+  color:var(--accent);
+  font-size:13px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+
+.memora-activity-video{
+  width:100%;
+  height:100%;
+  min-height:260px;
+  max-height:min(42vh,430px);
+  object-fit:contain;
+  border:1px solid rgba(31,119,104,.22);
+  border-radius:8px;
+  background:#0f2924;
+  box-shadow:0 18px 32px rgba(23,51,44,.14);
+}
+
 .memora-rules-panel{
   display:grid;
   gap:14px;
@@ -2105,6 +2130,18 @@ body[data-auth-mode="register"] .auth-tabs::before{
     left:50%;
     top:-9px;
     transform:translateX(-50%) rotate(135deg);
+  }
+
+  .memora-video-panel,
+  .memora-rules-panel,
+  .memora-level-preview{
+    grid-column:1/-1;
+    width:100%;
+  }
+
+  .memora-activity-video{
+    min-height:210px;
+    max-height:34vh;
   }
 
   .top-lobby{

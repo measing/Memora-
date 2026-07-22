@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memora-plus-web-v75';
+const CACHE_NAME = 'memora-plus-web-v76';
 
 const LOCAL_ASSETS = [
   './',
@@ -68,6 +68,10 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   if(url.origin !== self.location.origin) return;
+  if(request.headers.has('range') || url.pathname.endsWith('.mp4')){
+    event.respondWith(fetch(request));
+    return;
+  }
 
   event.respondWith(
     fetch(request)

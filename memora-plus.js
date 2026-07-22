@@ -506,6 +506,23 @@ function guideSpeechFor(current = level()){
   return 'Esta actividad usa objetos cotidianos. Busca que dos cartas van juntas por costumbre, uso o situación.';
 }
 
+function tutorialVideoFor(current = level()){
+  const videos = {
+    visual:'assets/tutorials/activity-1.mp4',
+    semantic:'assets/tutorials/activity-2.mp4',
+    temporal:'assets/tutorials/activity-3.mp4',
+    sequence:'assets/tutorials/activity-4.mp4',
+    daily:'assets/tutorials/activity-5.mp4'
+  };
+  return videos[current.id] || '';
+}
+
+function pauseGuideMedia(){
+  document.querySelectorAll('#memora-guide video').forEach(video => {
+    video.pause();
+  });
+}
+
 function renderGuide(){
   const guide = document.getElementById('memora-guide');
   if(!guide) return;
@@ -589,6 +606,7 @@ function renderGuide(){
   }
 
   const current = level();
+  const tutorialVideo = tutorialVideoFor(current);
   guide.className = 'memora-guide memora-guide-level';
   guide.innerHTML = `
     <div class="memora-character-scene">
@@ -603,6 +621,10 @@ function renderGuide(){
         <p class="memora-character-bubble">${escapeHTML(guideSpeechFor(current))}</p>
       </div>
     </div>
+    <section class="memora-video-panel" aria-label="Animación de la actividad">
+      <span>Animación explicativa</span>
+      <video class="memora-activity-video" src="${escapeHTML(tutorialVideo)}" controls autoplay muted loop playsinline preload="metadata"></video>
+    </section>
     <div class="memora-rules-panel" aria-label="Reglas de la actividad">
       <div>
         <span>Reglas</span>
@@ -643,6 +665,7 @@ function transitionToMode(mode){
     render();
     return;
   }
+  pauseGuideMedia();
   guide.classList.remove('memora-guide-screen-enter');
   guide.classList.add('memora-guide-screen-exit');
   window.setTimeout(() => {
@@ -658,6 +681,7 @@ function transitionToExercise(){
     startExercise();
     return;
   }
+  pauseGuideMedia();
   guide.classList.remove('memora-guide-screen-enter');
   guide.classList.add('memora-guide-screen-exit');
   window.setTimeout(startExercise, 280);
