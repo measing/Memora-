@@ -93,45 +93,110 @@ button{
 .memora-guide-welcome{
   justify-items:center;
   text-align:center;
+  gap:clamp(10px,2vh,16px);
+  padding-block:clamp(18px,4vh,42px);
 }
 
 .memora-guide-welcome .memora-guide-copy{
   justify-items:center;
+  gap:8px;
 }
 
 .memora-guide-welcome .memora-guide-primary{
   justify-self:center;
 }
 
-.memora-difficulty-panel{
-  width:min(760px,100%);
-  display:grid;
-  gap:10px;
+.memora-guide-welcome .memora-guide-logo{
+  width:min(360px,74vw);
+  height:clamp(150px,23vh,210px);
+  object-fit:cover;
+  object-position:center;
 }
 
-.memora-difficulty-panel > span{
+.memora-guide-welcome .memora-guide-copy h1{
+  max-width:900px;
+  font-size:clamp(38px,6vw,64px);
+  text-wrap:balance;
+}
+
+.memora-difficulty-modal{
+  position:fixed;
+  inset:0;
+  z-index:40;
+  display:grid;
+  place-items:center;
+  padding:22px;
+  background:rgba(10,30,26,.46);
+  backdrop-filter:blur(10px);
+}
+
+.memora-difficulty-window{
+  position:relative;
+  width:min(560px,100%);
+  display:grid;
+  gap:14px;
+  overflow:visible;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:rgba(255,255,255,.98);
+  padding:28px;
+  text-align:left;
+  box-shadow:0 24px 70px rgba(10,30,26,.28);
+}
+
+.memora-difficulty-window > span{
   color:var(--accent);
   font-size:13px;
   font-weight:900;
   text-transform:uppercase;
 }
 
+.memora-difficulty-window h2{
+  color:var(--primary-dark);
+  font-size:clamp(30px,5vw,44px);
+  line-height:1;
+  font-weight:900;
+}
+
+.memora-difficulty-window p{
+  color:#38504a;
+  font-size:17px;
+  line-height:1.35;
+  font-weight:800;
+}
+
+.memora-difficulty-close{
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:42px;
+  height:42px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#f7fbf9;
+  color:var(--primary-dark);
+  font-size:18px;
+  font-weight:900;
+  cursor:pointer;
+}
+
 .memora-difficulty-tabs{
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;
+  grid-template-columns:1fr;
+  gap:12px;
+  overflow:visible;
 }
 
 .memora-difficulty-tab{
-  min-height:92px;
+  position:relative;
+  min-height:78px;
   display:grid;
   align-content:center;
-  gap:6px;
   border:1px solid rgba(31,119,104,.22);
   border-radius:8px;
   background:#f7fbf9;
   color:var(--primary-dark);
-  padding:14px;
+  padding:18px;
   text-align:left;
   cursor:pointer;
   box-shadow:0 10px 22px rgba(23,51,44,.08);
@@ -139,15 +204,29 @@ button{
 }
 
 .memora-difficulty-tab strong{
-  font-size:18px;
+  font-size:22px;
   font-weight:900;
 }
 
-.memora-difficulty-tab small{
-  color:#526862;
-  font-size:13px;
-  line-height:1.25;
+.memora-difficulty-tab::after{
+  content:attr(data-description);
+  position:absolute;
+  left:calc(100% + 14px);
+  top:50%;
+  z-index:8;
+  width:240px;
+  border-radius:8px;
+  background:var(--primary-dark);
+  color:#fff;
+  padding:12px 14px;
+  font-size:14px;
+  line-height:1.35;
   font-weight:800;
+  box-shadow:0 16px 36px rgba(10,30,26,.28);
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(-50%) translateX(-6px);
+  transition:opacity .16s ease, transform .16s ease;
 }
 
 .memora-difficulty-tab.active{
@@ -156,9 +235,16 @@ button{
   box-shadow:0 14px 26px rgba(31,119,104,.16);
 }
 
-.memora-difficulty-tab:hover{
+.memora-difficulty-tab:hover,
+.memora-difficulty-tab:focus-visible{
   transform:translateY(-2px);
   box-shadow:0 16px 28px rgba(23,51,44,.12);
+}
+
+.memora-difficulty-tab:hover::after,
+.memora-difficulty-tab:focus-visible::after{
+  opacity:1;
+  transform:translateY(-50%) translateX(0);
 }
 
 .memora-guide-copy{
@@ -2343,9 +2429,33 @@ body[data-auth-mode="register"] .auth-tabs::before{
     grid-template-columns:1fr;
   }
 
+  .memora-difficulty-modal{
+    align-items:center;
+    padding:14px;
+  }
+
+  .memora-difficulty-window{
+    max-height:calc(var(--app-height) - 28px);
+    padding:22px 16px;
+    overflow-y:auto;
+  }
+
   .memora-difficulty-tab{
     min-height:78px;
     text-align:center;
+  }
+
+  .memora-difficulty-tab::after{
+    left:50%;
+    right:auto;
+    top:calc(100% + 8px);
+    width:min(300px, calc(100vw - 56px));
+    transform:translateX(-50%) translateY(-6px);
+  }
+
+  .memora-difficulty-tab:hover::after,
+  .memora-difficulty-tab:focus-visible::after{
+    transform:translateX(-50%) translateY(0);
   }
 
   .memora-lesson-window{

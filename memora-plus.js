@@ -636,9 +636,9 @@ function setupGuideVideoIntro(){
 
 function difficultyOptions(){
   return [
-    { id:'gentle', title:'Suave', description:'Menos cartas y ritmo tranquilo.' },
-    { id:'normal', title:'Normal', description:'Equilibrado para entrenar.' },
-    { id:'challenge', title:'Desafío', description:'Más elementos para recordar.' }
+    { id:'challenge', title:'Desaf\u00edo', description:'M\u00e1s cartas, menos margen de error y mayor exigencia de memoria.' },
+    { id:'normal', title:'Normal', description:'Equilibrado para entrenar con un ritmo c\u00f3modo.' },
+    { id:'gentle', title:'Suave', description:'Menos cartas y un ritmo m\u00e1s tranquilo para comenzar.' }
   ];
 }
 
@@ -666,39 +666,68 @@ function renderGuide(){
         <h1>Comienza tu recorrido Memora+</h1>
         <p>Elige actividades de memoria, asociación, ubicación, secuencias y vida cotidiana. Puedes detenerte cuando quieras.</p>
       </div>
-      <section class="memora-difficulty-panel" aria-label="Dificultad">
-        <span>Dificultad</span>
-        <div class="memora-difficulty-tabs" role="group" aria-label="Seleccionar dificultad">
-          ${difficultyOptions().map(option => `
-            <button class="memora-difficulty-tab ${option.id === state.difficulty ? 'active' : ''}" type="button" data-memora-difficulty="${escapeHTML(option.id)}" aria-pressed="${option.id === state.difficulty}">
-              <strong>${escapeHTML(option.title)}</strong>
-              <small>${escapeHTML(option.description)}</small>
-            </button>
-          `).join('')}
-        </div>
-      </section>
       <div class="memora-welcome-actions">
         <button class="memora-guide-primary" id="memora-guide-start" type="button">Empezar ejercicios</button>
         <button class="memora-guide-secondary" id="memora-welcome-practice" type="button">Practicar primero</button>
       </div>
+      <div class="memora-difficulty-modal" id="memora-difficulty-modal" role="dialog" aria-modal="true" aria-labelledby="memora-difficulty-title" hidden>
+        <section class="memora-difficulty-window">
+          <button class="memora-difficulty-close" id="memora-difficulty-close" type="button" aria-label="Cerrar dificultad">x</button>
+          <span>Dificultad</span>
+          <h2 id="memora-difficulty-title">Elige la dificultad</h2>
+          <p>Selecciona el nivel antes de comenzar. Pasa el mouse por cada opci&oacute;n para ver su descripci&oacute;n.</p>
+          <div class="memora-difficulty-tabs" role="group" aria-label="Seleccionar dificultad">
+            ${difficultyOptions().map(option => `
+              <button class="memora-difficulty-tab ${option.id === state.difficulty ? 'active' : ''}" type="button" data-memora-difficulty="${escapeHTML(option.id)}" data-description="${escapeHTML(option.description)}" title="${escapeHTML(option.description)}" aria-label="${escapeHTML(`${option.title}: ${option.description}`)}" aria-pressed="${option.id === state.difficulty}">
+                <strong>${escapeHTML(option.title)}</strong>
+              </button>
+            `).join('')}
+          </div>
+        </section>
+      </div>
     `;
-    document.querySelectorAll('[data-memora-difficulty]').forEach(button => {
-      button.addEventListener('click', () => setDifficulty(button.dataset.memoraDifficulty));
-    });
-    document.getElementById('memora-guide-start')?.addEventListener('click', () => {
+    const modal = document.getElementById('memora-difficulty-modal');
+    const closeModal = document.getElementById('memora-difficulty-close');
+    let pendingStart = 'journey';
+    const beginJourney = () => {
       state.practiceMode = false;
       state.guidedResults = [];
       state.levelIndex = 0;
       state.summaryRecorded = false;
       resetSession();
       transitionToMode('intro');
-    });
-    document.getElementById('memora-welcome-practice')?.addEventListener('click', () => {
+    };
+    const beginPractice = () => {
       state.guidedResults = [];
       state.levelIndex = 0;
       state.summaryRecorded = false;
       resetSession();
       startPractice();
+    };
+    const openDifficulty = mode => {
+      pendingStart = mode;
+      modal.hidden = false;
+      document.querySelector('[data-memora-difficulty]')?.focus();
+    };
+    const closeDifficulty = () => {
+      modal.hidden = true;
+    };
+    document.querySelectorAll('[data-memora-difficulty]').forEach(button => {
+      button.addEventListener('click', () => {
+        setDifficulty(button.dataset.memoraDifficulty);
+        closeDifficulty();
+        if(pendingStart === 'practice'){
+          beginPractice();
+        }else{
+          beginJourney();
+        }
+      });
+    });
+    document.getElementById('memora-guide-start')?.addEventListener('click', () => openDifficulty('journey'));
+    document.getElementById('memora-welcome-practice')?.addEventListener('click', () => openDifficulty('practice'));
+    closeModal?.addEventListener('click', closeDifficulty);
+    modal?.addEventListener('click', event => {
+      if(event.target === modal) closeDifficulty();
     });
     return;
   }
