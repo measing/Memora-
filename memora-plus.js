@@ -607,44 +607,39 @@ function renderGuide(){
 
   const current = level();
   const tutorialVideo = tutorialVideoFor(current);
-  guide.className = 'memora-guide memora-guide-level';
+  const exerciseLabel = `Ejercicio ${state.levelIndex + 1}`;
+  guide.className = 'memora-guide memora-guide-level memora-guide-lesson';
   guide.innerHTML = `
-    <div class="memora-character-scene">
-      <div class="memora-character-wrap" aria-hidden="true">
-        <div class="memora-character-card">
-          <img class="memora-character" src="assets/guide-character.png" alt="" />
+    <div class="memora-lesson-header">
+      <span>${escapeHTML(exerciseLabel)}</span>
+      <h1>${escapeHTML(current.title)}</h1>
+    </div>
+    <div class="memora-lesson-window">
+      <section class="memora-video-panel" aria-label="Animación del ejercicio">
+        <span>Animación explicativa</span>
+        <video class="memora-activity-video" src="${escapeHTML(tutorialVideo)}" controls autoplay muted playsinline preload="metadata"></video>
+      </section>
+      <aside class="memora-dialog-panel" aria-label="Explicación del ejercicio">
+        <span>${escapeHTML(exerciseLabel)}: ${escapeHTML(current.title)}</span>
+        <p class="memora-dialog-quote">&ldquo;${escapeHTML(current.explanation)}&rdquo;</p>
+        <div class="memora-dialog-rules">
+          <strong>Reglas</strong>
+          <ol>
+            ${rulesFor(current).map(rule => `<li>${escapeHTML(rule)}</li>`).join('')}
+          </ol>
         </div>
-      </div>
-      <div class="memora-guide-copy memora-character-copy">
-        <span>${escapeHTML(current.tag)}</span>
-        <h1>${escapeHTML(current.title)}</h1>
-        <p class="memora-character-bubble">${escapeHTML(guideSpeechFor(current))}</p>
-      </div>
+        <div class="memora-level-preview">
+          <span>Objetivo</span>
+          <strong>${exerciseTotal(current)} respuestas</strong>
+        </div>
+      </aside>
     </div>
-    <section class="memora-video-panel" aria-label="Animación de la actividad">
-      <span>Animación explicativa</span>
-      <video class="memora-activity-video" src="${escapeHTML(tutorialVideo)}" controls autoplay muted loop playsinline preload="metadata"></video>
-    </section>
-    <div class="memora-rules-panel" aria-label="Reglas de la actividad">
-      <div>
-        <span>Reglas</span>
-        <strong>Antes de comenzar</strong>
-      </div>
-      <ol>
-        ${rulesFor(current).map(rule => `<li>${escapeHTML(rule)}</li>`).join('')}
-      </ol>
-      <p>${escapeHTML(current.explanation)}</p>
-    </div>
-    <div class="memora-level-preview">
-      <span>Objetivo</span>
-      <strong>${exerciseTotal(current)} respuestas</strong>
-    </div>
-    <div class="memora-summary-actions">
-      <button class="memora-guide-primary" id="memora-guide-begin" type="button">Comenzar actividad</button>
+    <div class="memora-summary-actions memora-lesson-actions">
+      <button class="memora-guide-primary" id="memora-guide-begin" type="button">Comenzar ejercicio</button>
     </div>
   `;
   document.getElementById('memora-guide-begin')?.addEventListener('click', () => transitionToExercise());
-  announce(`${current.tag}. ${current.title}. ${guideSpeechFor(current)} ${rulesFor(current).join(' ')}`);
+  announce(`${exerciseLabel}. ${current.title}. ${current.explanation} ${rulesFor(current).join(' ')}`);
 }
 
 function currentExerciseResult(current){
