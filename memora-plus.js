@@ -702,11 +702,12 @@ function renderGuide(){
       transitionToMode('intro');
     };
     const beginPractice = () => {
+      state.practiceMode = true;
       state.guidedResults = [];
       state.levelIndex = 0;
       state.summaryRecorded = false;
       resetSession();
-      startPractice();
+      transitionToMode('intro');
     };
     const openDifficulty = mode => {
       pendingStart = mode;
@@ -862,7 +863,6 @@ function transitionToExercise(){
 
 function startPractice(){
   state.practiceMode = true;
-  state.difficulty = 'gentle';
   startExercise();
   setText('memora-prompt', `Práctica: ${instructionFor(level())}`);
   announce(`Comencemos una práctica. ${instructionFor(level())}`);

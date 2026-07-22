@@ -1,4 +1,4 @@
-import { initMemoraPlus } from './memora-plus.js?v=60';
+import { initMemoraPlus } from './memora-plus.js?v=61';
 import { initAccountBar, initLoginPage, playEntryAnimation, requireSessionForApp } from './account.js?v=26';
 
 function initViewportSupport(){
