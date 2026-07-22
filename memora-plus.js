@@ -654,6 +654,7 @@ function setDifficulty(mode){
 function renderGuide(){
   const guide = document.getElementById('memora-guide');
   if(!guide) return;
+  document.getElementById('memora-difficulty-modal')?.remove();
   guide.classList.remove('memora-guide-screen-enter', 'memora-guide-screen-exit');
   requestAnimationFrame(() => guide.classList.add('memora-guide-screen-enter'));
 
@@ -687,6 +688,9 @@ function renderGuide(){
       </div>
     `;
     const modal = document.getElementById('memora-difficulty-modal');
+    if(modal){
+      document.body.appendChild(modal);
+    }
     const closeModal = document.getElementById('memora-difficulty-close');
     let pendingStart = 'journey';
     const beginJourney = () => {
