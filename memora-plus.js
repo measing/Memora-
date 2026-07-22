@@ -131,6 +131,7 @@ const state = {
   animateGameEntry:false,
   summaryRecorded:false,
   practiceMode:false,
+  difficulty:'normal',
   paused:false,
   streak:0,
   guidedResults:[],
@@ -358,6 +359,21 @@ function closeHistoryModal(){
   document.body.classList.remove('history-open');
 }
 
+function openSettingsModal(){
+  const modal = document.getElementById('memora-settings-modal');
+  if(!modal) return;
+  modal.hidden = false;
+  document.body.classList.add('settings-open');
+  document.getElementById('memora-settings-close')?.focus();
+}
+
+function closeSettingsModal(){
+  const modal = document.getElementById('memora-settings-modal');
+  if(!modal) return;
+  modal.hidden = true;
+  document.body.classList.remove('settings-open');
+}
+
 function shuffle(items){
   const copy = [...items];
   for(let i = copy.length - 1; i > 0; i--){
@@ -369,7 +385,7 @@ function shuffle(items){
 
 function level(){
   const base = LEVELS[state.levelIndex] || LEVELS[0];
-  const mode = document.getElementById('memora-difficulty')?.value || 'normal';
+  const mode = state.difficulty || 'normal';
   const counts = {
     gentle:{ pairs:3, temporal:4, sequence:2 },
     normal:{ pairs:base.id === 'daily' ? 6 : 5, temporal:6, sequence:4 },
@@ -523,6 +539,23 @@ function pauseGuideMedia(){
   });
 }
 
+function difficultyOptions(){
+  return [
+    { id:'gentle', title:'Suave', description:'Menos cartas y ritmo tranquilo.' },
+    { id:'normal', title:'Normal', description:'Equilibrado para entrenar.' },
+    { id:'challenge', title:'Desafío', description:'Más elementos para recordar.' }
+  ];
+}
+
+function setDifficulty(mode){
+  state.difficulty = mode || 'normal';
+  document.querySelectorAll('[data-memora-difficulty]').forEach(button => {
+    const active = button.dataset.memoraDifficulty === state.difficulty;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+}
+
 function renderGuide(){
   const guide = document.getElementById('memora-guide');
   if(!guide) return;
@@ -538,11 +571,25 @@ function renderGuide(){
         <h1>Comienza tu recorrido Memora+</h1>
         <p>Elige actividades de memoria, asociación, ubicación, secuencias y vida cotidiana. Puedes detenerte cuando quieras.</p>
       </div>
+      <section class="memora-difficulty-panel" aria-label="Dificultad">
+        <span>Dificultad</span>
+        <div class="memora-difficulty-tabs" role="group" aria-label="Seleccionar dificultad">
+          ${difficultyOptions().map(option => `
+            <button class="memora-difficulty-tab ${option.id === state.difficulty ? 'active' : ''}" type="button" data-memora-difficulty="${escapeHTML(option.id)}" aria-pressed="${option.id === state.difficulty}">
+              <strong>${escapeHTML(option.title)}</strong>
+              <small>${escapeHTML(option.description)}</small>
+            </button>
+          `).join('')}
+        </div>
+      </section>
       <div class="memora-welcome-actions">
         <button class="memora-guide-primary" id="memora-guide-start" type="button">Empezar ejercicios</button>
         <button class="memora-guide-secondary" id="memora-welcome-practice" type="button">Practicar primero</button>
       </div>
     `;
+    document.querySelectorAll('[data-memora-difficulty]').forEach(button => {
+      button.addEventListener('click', () => setDifficulty(button.dataset.memoraDifficulty));
+    });
     document.getElementById('memora-guide-start')?.addEventListener('click', () => {
       state.practiceMode = false;
       state.guidedResults = [];
@@ -684,8 +731,7 @@ function transitionToExercise(){
 
 function startPractice(){
   state.practiceMode = true;
-  const difficulty = document.getElementById('memora-difficulty');
-  if(difficulty) difficulty.value = 'gentle';
+  state.difficulty = 'gentle';
   startExercise();
   setText('memora-prompt', `Práctica: ${instructionFor(level())}`);
   announce(`Comencemos una práctica. ${instructionFor(level())}`);
@@ -978,7 +1024,7 @@ function startExercise(){
   resetSession();
   const base = LEVELS[state.levelIndex] || LEVELS[0];
   if(base.type === 'sequence'){
-    const mode = document.getElementById('memora-difficulty')?.value || 'normal';
+    const mode = state.difficulty || 'normal';
     const length = mode === 'gentle' ? 2 : mode === 'challenge' ? 6 : 4;
     const keys = Object.keys(base.swatches);
     state.generatedSequence = Array.from({ length }, () => keys[Math.floor(Math.random() * keys.length)]);
@@ -1286,12 +1332,23 @@ export function initMemoraPlus(){
       openHistoryModal();
       return;
     }
+    if(event.target.closest('#account-settings')){
+      openSettingsModal();
+      return;
+    }
     if(event.target.closest('#memora-history-close') || event.target.id === 'memora-history-modal'){
       closeHistoryModal();
     }
+    if(event.target.closest('#memora-settings-close') || event.target.id === 'memora-settings-modal'){
+      closeSettingsModal();
+    }
   });
+  document.addEventListener('memora-open-settings', openSettingsModal);
   document.addEventListener('keydown', event => {
-    if(event.key === 'Escape') closeHistoryModal();
+    if(event.key === 'Escape'){
+      closeHistoryModal();
+      closeSettingsModal();
+    }
   });
   document.getElementById('memora-start')?.addEventListener('click', startExercise);
   document.getElementById('memora-back-lobby')?.addEventListener('click', returnToLobby);
@@ -1311,10 +1368,6 @@ export function initMemoraPlus(){
   document.getElementById('memora-interface-size')?.addEventListener('change', render);
   document.getElementById('memora-animation-speed')?.addEventListener('change', render);
   document.getElementById('memora-companion-mode')?.addEventListener('change', render);
-  document.getElementById('memora-difficulty')?.addEventListener('change', () => {
-    if(state.appMode === 'exercise') startExercise();
-    else render();
-  });
   document.getElementById('memora-observe-time')?.addEventListener('change', () => {
     if(state.phase === 'idle' || state.phase === 'complete') render();
   });

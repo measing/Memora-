@@ -368,6 +368,7 @@ export function initAccountBar(){
       </span>
     </button>
     <div class="account-menu" id="account-menu" role="menu" hidden>
+      <button class="account-settings-action" id="account-settings" type="button" role="menuitem">Configuración</button>
       ${session.provider === 'guest' ? '<a href="login.html?mode=register" role="menuitem">Crear cuenta</a>' : ''}
       <button id="account-logout" type="button" role="menuitem">${session.provider === 'guest' ? 'Salir al acceso' : 'Cerrar sesión'}</button>
     </div>
@@ -376,6 +377,10 @@ export function initAccountBar(){
     <a class="account-link" href="login.html?mode=register">Crear cuenta</a>
   `;
   document.getElementById('account-profile-button')?.addEventListener('click', () => toggleAccountMenu());
+  document.getElementById('account-settings')?.addEventListener('click', () => {
+    toggleAccountMenu(false);
+    document.dispatchEvent(new CustomEvent('memora-open-settings'));
+  });
   document.addEventListener('click', event => {
     if(!bar.contains(event.target)) toggleAccountMenu(false);
   });
